@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mr. Milad Physics Lab — Physics Lesson Generator</title>
+<style>
+:root{--bg:#050b16;--panel:#0d1b2e;--panel2:#112842;--ink:#f3f8ff;--muted:#a9bdd3;--cyan:#55dcff;--purple:#a78bfa;--green:#45e0a2;--orange:#ffc36b;--red:#ff7082;--blue:#5ea7ff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);font-family:"Segoe UI",Arial,sans-serif;background:radial-gradient(circle at 15% 5%,#16365c 0,#071221 35%,#030711 100%);min-height:100vh;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(#ffffff04 1px,transparent 1px),linear-gradient(90deg,#ffffff04 1px,transparent 1px);background-size:50px 50px;mask-image:linear-gradient(to bottom,#000,transparent 85%)}
+header{position:sticky;top:0;z-index:20;padding:16px 5%;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff18;background:#050b16d9;backdrop-filter:blur(18px)}
+.logo{font-weight:900;letter-spacing:.3px}.logo span{color:var(--cyan)}.pill{border:1px solid #ffffff1e;background:#ffffff08;padding:7px 12px;border-radius:999px;color:var(--muted);font-size:12px}
+main{max-width:1180px;margin:auto;padding:36px 20px 80px}.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;min-height:560px}
+.kicker{color:var(--cyan);font-weight:800;letter-spacing:2px;font-size:12px}.hero h1{font-size:clamp(43px,7vw,78px);line-height:.94;letter-spacing:-3px;margin:13px 0}.hero h1 em{font-style:normal;color:var(--cyan)}.lead{color:var(--muted);font-size:19px;line-height:1.65;max-width:680px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}button{font:inherit;font-weight:800;border:0;border-radius:14px;padding:13px 17px;cursor:pointer;color:#04101b;background:linear-gradient(135deg,var(--cyan),#b7f2ff);box-shadow:0 10px 30px #55dcff22;transition:.2s}button:hover{transform:translateY(-2px)}button.secondary{background:#ffffff0b;color:var(--ink);border:1px solid #ffffff1c;box-shadow:none}.small{padding:9px 12px;font-size:13px}
+.lab3d{height:430px;display:grid;place-items:center;perspective:1000px;position:relative}.atom{width:205px;height:205px;border-radius:50%;position:relative;transform-style:preserve-3d;animation:atomFloat 5s ease-in-out infinite;background:radial-gradient(circle at 35% 28%,#fff 0 4%,#55dcff 12%,#2673b2 34%,#0a1830 70%);box-shadow:0 0 100px #55dcff45,inset -28px -25px 50px #000b}.nucleus{position:absolute;width:72px;height:72px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#fff,#a78bfa 22%,#6244b9 58%,#1a123b);box-shadow:0 0 45px #a78bfa88;animation:pulse 2s ease-in-out infinite}.orbit{position:absolute;left:50%;top:50%;width:315px;height:115px;margin:-57px 0 0 -157px;border:1px solid #55dcff66;border-radius:50%;transform-style:preserve-3d}.o1{transform:rotateX(68deg) rotateZ(15deg);animation:orbit1 7s linear infinite}.o2{transform:rotateX(68deg) rotateZ(75deg);animation:orbit2 9s linear infinite;border-color:#a78bfa66}.o3{transform:rotateX(68deg) rotateZ(135deg);animation:orbit3 11s linear infinite;border-color:#45e0a266}.e{position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 20px var(--cyan);left:50%;top:50%;transform-origin:0 0}.o1 .e{transform:rotate(0deg) translateX(157px)}.o2 .e{transform:rotate(130deg) translateX(157px);background:#d9cfff}.o3 .e{transform:rotate(250deg) translateX(157px);background:#bfffe7}
+@keyframes pulse{50%{transform:scale(1.08)}}
+@keyframes atomFloat{50%{transform:translateY(-14px) rotateY(12deg)}}@keyframes pulse{50%{transform:translate(-50%,-50%) scale(1.1)}}@keyframes orbit1{to{transform:rotateX(68deg) rotateZ(375deg)}}@keyframes orbit2{to{transform:rotateX(68deg) rotateZ(435deg)}}@keyframes orbit3{to{transform:rotateX(68deg) rotateZ(495deg)}}
+.section{margin-top:45px}.section h2{font-size:34px;margin:0 0 7px}.sub{color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:22px}.card{padding:21px;border-radius:20px;border:1px solid #ffffff14;background:linear-gradient(145deg,#ffffff0c,#ffffff03);box-shadow:0 18px 50px #0004}.card .ico{font-size:30px}.card h3{margin:9px 0 6px}.card p{color:var(--muted);line-height:1.5;margin:0}
+.labgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}.panel{background:#081526cc;border:1px solid #ffffff15;border-radius:22px;padding:20px;box-shadow:0 20px 60px #0004}.panel h3{margin:0 0 12px;font-size:22px}
+canvas{width:100%;height:315px;background:#040c17;border-radius:15px;display:block}.graph-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.progress{height:8px;background:#ffffff10;border-radius:99px;overflow:hidden}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:.35s}.stats{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin:9px 0 15px}.question{font-size:18px;line-height:1.55}.option{display:block;width:100%;text-align:left;margin:9px 0;background:#ffffff08;color:var(--ink);border:1px solid #ffffff16;box-shadow:none}.option.correct{border-color:var(--green);background:#45e0a212}.option.wrong{border-color:var(--red);background:#ff708214}.feedback{min-height:55px;color:var(--muted);line-height:1.5;margin-top:12px}
+.glossary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:15px}.term{padding:13px;border:1px solid #ffffff12;background:#ffffff06;border-radius:13px}.term b{color:var(--cyan)}.term span{color:var(--muted);display:block;font-size:13px;margin-top:4px}
+.soundbar{position:fixed;right:18px;bottom:18px;z-index:30;display:flex;gap:8px;align-items:center;padding:9px;background:#081526ee;border:1px solid #ffffff1b;border-radius:16px;box-shadow:0 15px 50px #0008}.soundbar label{font-size:12px;color:var(--muted)}
+.toast{position:fixed;left:50%;top:90px;transform:translateX(-50%) translateY(-15px);opacity:0;pointer-events:none;background:#10243c;border:1px solid #55dcff55;padding:11px 16px;border-radius:13px;transition:.3s;z-index:50}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{text-align:center;color:#7189a4;padding:35px}
+@media(max-width:850px){.hero,.labgrid{grid-template-columns:1fr}.cards,.glossary{grid-template-columns:1fr}.hero{min-height:auto}.lab3d{height:350px}}
+
+.unitLibrary{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:22px}.unitCard{background:linear-gradient(145deg,#ffffff0b,#ffffff03);border:1px solid #ffffff15;border-radius:18px;padding:15px}.unitCard h3{margin:0 0 10px;color:var(--cyan);font-size:18px}.topicBtn{width:100%;text-align:left;background:#ffffff07;color:var(--ink);border:1px solid #ffffff13;box-shadow:none;margin:4px 0;padding:9px 10px;font-size:13px}.topicBtn:hover{border-color:#55dcff66}.sourceNote{color:var(--muted);font-size:12px;margin-top:12px}
+</style>
+<style>
+.uploadZone{margin-top:18px;padding:24px;border:1px dashed #55dcff66;border-radius:18px;background:#55dcff08;text-align:center}
+.uploadZone input{display:none}.uploadZone label{display:inline-block;cursor:pointer}.fileName{margin-top:10px;color:var(--muted);font-size:13px}.lessonResult{margin-top:16px;display:none}.lessonResult .mini{padding:15px;border:1px solid #ffffff14;border-radius:15px;background:#ffffff06;margin-top:10px}.mini h4{margin:0 0 6px;color:var(--cyan)}
+.resultBox{display:none;text-align:center;padding:28px;border-radius:22px;background:radial-gradient(circle at top,#17385d,#081526);border:1px solid #55dcff33}.resultScore{font-size:68px;font-weight:900;color:var(--cyan);line-height:1}.medal{font-size:70px;animation:pulse 1.4s infinite}.resultMsg{font-size:24px;font-weight:900;margin:12px}.resultForm{max-width:620px;margin:18px auto 0;text-align:left}.resultForm input{width:100%;padding:13px;border-radius:12px;border:1px solid #ffffff20;background:#ffffff08;color:#fff;margin:6px 0 12px;outline:none}.sendStatus{min-height:24px;color:var(--muted);font-size:13px;margin-top:10px}.pdfStatus{min-height:20px;margin-top:10px}.adminBox{margin-top:12px;padding:12px;border-radius:12px;background:#ffffff05;color:var(--muted);font-size:12px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>window.addEventListener('load',()=>{if(window.pdfjsLib&&pdfjsLib.GlobalWorkerOptions){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}});</script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<style>
+.option.selected{border-color:var(--cyan);background:#55dcff14;box-shadow:0 0 0 2px #55dcff22 inset}.option:disabled{cursor:default;opacity:.98}.checkBtn{margin-top:8px;background:linear-gradient(135deg,#45e0a2,#b7ffe7)}.selectedAnswer,.tutorMeta{color:var(--muted);font-size:13px;margin:8px 0}.formulaBox{display:none;margin:10px 0;padding:10px 12px;border-left:3px solid var(--orange);background:#ffc36b0b;border-radius:8px;color:#ffe0a8}.tutorGood{color:var(--green);font-size:17px}.tutorTry{color:var(--orange);font-size:17px}.explanation{margin-top:7px;color:var(--muted)}
+</style>
+
+<style id="owner-protection">
+body{user-select:none;-webkit-user-select:none} .ownerStamp{position:fixed;right:12px;bottom:10px;z-index:9999;opacity:.62;font-size:11px;letter-spacing:.4px;pointer-events:none;background:#071321cc;border:1px solid #6ee7ff33;border-radius:8px;padding:6px 9px;color:#bfefff}.licenseBox{margin:18px auto;max-width:1100px;padding:16px;border:1px solid #6ee7ff22;border-radius:14px;background:#071321aa;color:#b8cada}.licenseBox strong{color:#fff}.tamperWarn{display:none;margin:12px 0;padding:12px;border-radius:10px;background:#3a0f16;color:#ffd8de;border:1px solid #ff6b7d66}
+@media print{body{display:none!important}}
+</style><meta name="owner" content="Mr. Milad Physics Lab — Copyright © 2026"><meta name="robots" content="noindex,nofollow"><link rel="canonical" href="https://YOUR-USERNAME.github.io/mr-milad-physics-lab/"></head>
+<body>
+<div class="licenseBox"><strong>© Mr. Milad Physics Lab</strong> — Cambridge Essential Physics Tutor Build.<br>Licensed for authorized educational use only. The question database, tutor logic, interface text, branding and scoring system are protected original work. Do not redistribute, rebrand, resell, edit and publish, or claim authorship without written permission.<div id="tamperWarn" class="tamperWarn">⚠️ This copy failed the integrity check. Please use the original authorized build.</div></div>
+<div class="ownerStamp">© Mr. Milad Physics Lab • Authorized Build</div>
+
+<header><div class="logo">⚛️ <span>Mr. Milad</span> Physics Lab</div><div class="pill">IGCSE & O LEVEL • TUTOR MODE</div></header>
+<main>
+<section class="hero">
+<div>
+<div class="kicker">WELCOME • EXPLORE • DISCOVER</div>
+<h1>Welcome to <em>Mr. Milad</em> Physics Lab</h1>
+<p class="lead">A visual, interactive Physics Lab where you can <b>see</b> the physics, <b>hear</b> the lesson, and <b>test</b> your understanding. Upload a lesson, explore the Physics, and build a quiz from your own PDF.</p>
+<div class="actions">
+<button onclick="startLab()">🚀 Enter the Lab</button>
+<button class="secondary" onclick="playIntro()">🔊 Play Voice Introduction</button>
+<button class="secondary" onclick="toggleSound()">🔉 Sound Effects: <span id="soundState">ON</span></button>
+</div>
+<p class="sub" style="margin-top:16px;font-size:13px">Tip: browser voice starts after you press a button. If your computer has no English voice installed, Chrome/Edge may use the system default voice.</p>
+</div>
+<div class="lab3d" aria-label="3D animated atom">
+<div class="atom"><div class="nucleus"></div></div>
+<div class="orbit o1"><div class="e"></div></div><div class="orbit o2"><div class="e"></div></div><div class="orbit o3"><div class="e"></div></div>
+</div>
+</section>
+
+
+<section class="section" id="essentialLibrary">
+<h2>📚 Cambridge Essential Physics — Third Edition Topic Library</h2>
+<p class="sub">All 16 units and all 103 topic names from the uploaded contents pages are included below. Select a topic to start a tutor-led IGCSE/O Level practice session. Each topic has 10 application, calculation, reasoning and practical-style questions; the correct answer is revealed only after CHECK ANSWER.</p>
+<div id="unitLibrary" class="unitLibrary"></div>
+</section>
+
+<section class="section" id="lab">
+<h2>🧪 Physics Learning Mission</h2><p class="sub">Choose from the full Third Edition topic library or upload any Physics lesson to generate a lesson and quiz.</p>
+<div class="cards">
+<div class="card"><div class="ico">📈</div><h3>Distance–Time Graph</h3><p>Shows how distance changes as time passes.</p></div>
+<div class="card"><div class="ico">⚡</div><h3>Gradient = Speed</h3><p>The gradient (slope) of a distance–time graph tells us the speed.</p></div>
+<div class="card"><div class="ico">⏸️</div><h3>Horizontal = Stationary</h3><p>A horizontal section means the object is stationary: speed is zero.</p></div>
+</div>
+
+<div class="labgrid">
+<div class="panel">
+<h3>🌌 3D Motion Simulator</h3>
+<canvas id="graph" width="760" height="430"></canvas>
+<div class="graph-controls">
+<button class="small secondary" onclick="setGraph('steady')">⚡ Steady Speed</button>
+<button class="small secondary" onclick="setGraph('stop')">⏸️ Stationary</button>
+<button class="small secondary" onclick="setGraph('accel')">🚀 Accelerating</button>
+</div>
+<p class="sub" id="graphExplain">Straight upward line → constant gradient → steady speed.</p>
+</div>
+
+<div class="panel">
+<div class="stats"><span id="qnum">Question 1 / 10</span><span id="score">Score: 0</span></div><div class="progress"><div class="bar" id="bar"></div></div>
+<h3 id="qtitle">🎯 Physics Challenge</h3><div id="tutorMeta" class="tutorMeta">Choose a topic to begin. Answers stay hidden until CHECK ANSWER.</div>
+<p class="question" id="question"></p><div id="markMeta" class="tutorMeta"></div><div id="options"></div><div id="selectedAnswer" class="selectedAnswer">Select an answer, then press CHECK ANSWER.</div><button id="checkAnswer" class="small checkBtn" onclick="checkTutorAnswer()" disabled>✓ CHECK ANSWER</button><div id="formulaBox" class="formulaBox"></div><div class="feedback" id="feedback"></div>
+<div class="actions"><button class="small secondary" onclick="readQuestion()">🔊 Read Question</button><button class="small" id="next" onclick="nextQ()" style="display:none">Next →</button></div>
+</div>
+</div>
+
+<div class="panel section" id="pdfPanel">
+<h3>📄 Upload a PDF → Generate a Physics Lesson</h3>
+<p class="sub">Upload a Physics worksheet or lesson. The Lab reads the PDF, uses OCR when needed, detects the topic, and builds a quiz from the uploaded lesson.</p>
+<div class="uploadZone">
+  <label for="pdfInput"><button type="button" onclick="document.getElementById('pdfInput').click()">📄 Choose Physics PDF</button></label>
+  <input id="pdfInput" type="file" accept="application/pdf,.pdf" onchange="handlePDF(event)">
+  <div class="fileName" id="fileName">No PDF selected</div>
+</div>
+<div class="actions"><button class="small secondary" id="generateBtn" onclick="generateLessonFromPDF()" disabled>✨ Generate Lesson</button><button class="small" id="generateQuizBtn" onclick="generateQuizFromPDF()" disabled>🧠 Generate Quiz from PDF</button><button class="small secondary" id="ocrHint" onclick="speak('I will first read the PDF. If it is scanned, I will use OCR to read the page images. Then I will build a quiz from the detected Physics topic and evidence in your PDF.')">🔊 How PDF Quiz Works</button></div>
+<div id="pdfStatus" class="fileName"></div>
+<div class="lessonResult" id="lessonResult"></div>
+</div>
+
+<div class="panel section">
+<h3>📚 Physics Vocabulary — English ↔ Arabic</h3>
+<div class="glossary">
+<div class="term"><b>Distance</b><span>المسافة — length travelled from the starting point</span></div>
+<div class="term"><b>Time</b><span>الزمن / الوقت — how long the motion lasts</span></div>
+<div class="term"><b>Speed</b><span>السرعة — distance travelled per unit time</span></div>
+<div class="term"><b>Gradient / Slope</b><span>الميل — change in distance ÷ change in time</span></div>
+<div class="term"><b>Stationary</b><span>ساكن / متوقف — not moving; speed = 0</span></div>
+<div class="term"><b>Steady Speed</b><span>سرعة ثابتة — equal distances in equal times</span></div>
+<div class="term"><b>Accelerating</b><span>يتسارع — speed is increasing</span></div>
+<div class="term"><b>Decelerating</b><span>يتباطأ — speed is decreasing</span></div>
+</div>
+</div>
+</section>
+</main>
+<footer>Mr. Milad Physics Lab • Learn it. See it. Hear it. Interact with it. 🚀<div class="licenseBox"><strong>Mr. Milad Physics Lab — Protected Edition</strong><br>Question data is served from a private backend. Do not publish backend files in the GitHub Pages repository.</div></footer>
+
+<div class="soundbar"><label>Lab audio</label><button class="small secondary" onclick="playTone('correct')">♪ Test Sound</button><button class="small secondary" onclick="stopVoice()">■ Stop Voice</button></div>
+<div class="toast" id="toast"></div>
+<div id="voiceWelcome" style="position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(circle,#102b4d,#030711 70%);transition:opacity .7s">
+  <div style="text-align:center;padding:30px;max-width:720px">
+    <div style="font-size:58px;animation:pulse 1.8s infinite">⚛️</div>
+    <div style="color:#55dcff;font-size:13px;font-weight:900;letter-spacing:3px;margin:12px">MR. MILAD PHYSICS LAB</div>
+    <div style="font-size:clamp(36px,7vw,70px);font-weight:900;letter-spacing:-3px">Welcome to<br><span style="color:#55dcff">Mr. Milad Physics Lab</span></div>
+    <div id="voiceStatus" style="color:#a9bdd3;margin:18px 0">🔊 Starting voice introduction...</div>
+    <button onclick="startIntroFromOverlay()">▶ Start Lab</button>
+  </div>
+</div>
+
+<script>
+let soundOn=true,audioCtx=null,voiceTimer=null;
+function audio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}}
+function tone(freq,dur=.12,type='sine',gain=.035,delay=0){if(!soundOn)return;const a=audio();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.0001,a.currentTime+delay);g.gain.linearRampToValueAtTime(gain,a.currentTime+delay+.02);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+delay+dur);o.connect(g).connect(a.destination);o.start(a.currentTime+delay);o.stop(a.currentTime+delay+dur+.03)}catch(e){}}
+function playTone(kind){if(kind==='correct'){tone(660,.12);tone(880,.18,'sine',.035,.13)}else if(kind==='wrong'){tone(180,.2,'sawtooth',.025)}else{tone(440,.08);tone(660,.08,'sine',.025,.09)}}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundState').textContent=soundOn?'ON':'OFF';if(soundOn)playTone('next')}
+let speechReady=false;
+function chooseVoice(){
+  if(!('speechSynthesis' in window))return null;
+  const vs=speechSynthesis.getVoices()||[];
+  return vs.find(v=>/^en-US$/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||vs[0]||null;
+}
+function speak(text,cb){
+  if(!text){if(cb)cb();return}
+  if(!('speechSynthesis' in window)){toast('Voice is not available in this browser.');if(cb)cb();return}
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(String(text));
+    u.lang='en-US';u.rate=.9;u.pitch=1.02;u.volume=1;
+    const v=chooseVoice();if(v)u.voice=v;
+    u.onstart=()=>{speechReady=true};u.onend=()=>{if(cb)cb()};u.onerror=()=>{if(cb)cb()};
+    speechSynthesis.speak(u);
+    setTimeout(()=>{try{speechSynthesis.resume()}catch(e){}},80);
+  }catch(e){if(cb)cb()}
+}
+function playIntro(cb){
+  const text="Welcome to Mr. Milad Physics Lab. Choose a lesson, upload a Physics PDF, learn, practice, and test yourself. Are you ready? Let's begin!";
+  playTone('next');speak(text,cb);
+}
+function startIntroFromOverlay(){
+  const ov=document.getElementById('voiceWelcome');
+  try{const a=audio();if(a&&a.state==='suspended')a.resume()}catch(e){}
+  if('speechSynthesis' in window){try{speechSynthesis.cancel();speechSynthesis.resume()}catch(e){}}
+  const status=document.getElementById('voiceStatus');
+  if(status)status.textContent='🔊 Starting the lab...';
+  if(ov){ov.style.opacity='0';ov.style.pointerEvents='none';setTimeout(()=>ov.remove(),500)}
+  setTimeout(()=>{startLab(true)},80);
+}
+function autoWelcome(){
+  const ov=document.getElementById('voiceWelcome');const status=document.getElementById('voiceStatus');
+  if(!ov)return;
+  // Do not auto-remove the overlay before a user gesture: browsers may block speech.
+  status.textContent='🔊 Click Start Lab once to enable voice and enter the lab.';
+}
+function stopVoice(){if('speechSynthesis' in window)speechSynthesis.cancel()}
+function readQuestion(){speak(document.getElementById('question').innerText);playTone('next')}
+function startLab(withVoice=false){
+  const lab=document.getElementById('lab');
+  if(lab)lab.scrollIntoView({behavior:'smooth',block:'start'});
+  if(withVoice)setTimeout(()=>playIntro(),150);
+}
+function toast(t){let x=document.getElementById('toast');x.textContent=t;x.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>x.classList.remove('show'),2400)}
+
+let qs=[
+{q:"What does a distance–time graph show?",a:["How force changes with time","How distance moved changes with time","How mass changes with time","How temperature changes with time"],c:1,e:"A distance–time graph shows how the distance moved changes with time."},
+{q:"What does a straight, upward-sloping line mean?",a:["The object is stationary","The object has zero mass","The object is moving at a steady speed","The object is accelerating"],c:2,e:"A straight line has a constant gradient, so it represents steady speed."},
+{q:"Which graph line represents the faster object?",a:["The steeper line","The horizontal line","The flatter line","A line with zero gradient"],c:0,e:"Gradient tells speed. A steeper line has a larger gradient and therefore a higher speed."},
+{q:"What does a horizontal line mean?",a:["The object is accelerating","The object is moving very fast","The object is stationary","The object is changing direction"],c:2,e:"Distance is not increasing, so the object is stationary and its speed is zero."},
+{q:"Rana walks 1000 m in 10 minutes. What is her average speed?",a:["1.0 m/s","1.7 m/s","10 m/s","60 m/s"],c:1,e:"10 minutes = 600 seconds. Speed = distance ÷ time = 1000 ÷ 600 = 1.7 m/s."},
+{q:"If a journey graph has flat sections B and D, what do they show?",a:["The person stopped","The person was moving fastest","The person was accelerating","The person travelled backwards"],c:0,e:"Flat sections show that distance stayed constant, so the person stopped."},
+{q:"A falling ball's distance–time graph becomes steeper and steeper. What does this show?",a:["Its speed is decreasing","It is stationary","Its speed is increasing","Its distance is zero"],c:2,e:"An increasing gradient means increasing speed: the ball is accelerating."}
+];
+let qi=0,score=0,answered=false;
+function render(){renderTutor()}
+function renderTutor(){
+ answered=false; const x=qs[qi];
+ qnum.textContent=`Question ${qi+1} / ${qs.length}`;
+ document.getElementById('score').textContent=`Score: ${earnedMarks} / ${totalMarks}`;
+ bar.style.width=`${qi/qs.length*100}%`;
+ question.textContent=x.q;
+ const mm=document.getElementById('markMeta'); if(mm)mm.textContent=`${x.marks||1} mark${(x.marks||1)>1?'s':''} • Choose your answer, then check it.`;
+ feedback.innerHTML=''; next.style.display='none';
+ options.innerHTML='';
+ x.a.forEach((t,n)=>{let b=document.createElement('button');b.className='option';b.type='button';b.textContent=String.fromCharCode(65+n)+'. '+t;b.onclick=()=>selectTutor(n,b);options.appendChild(b)});
+ const check=document.getElementById('checkAnswer'); if(check){check.style.display='inline-block';check.disabled=true;}
+ const formula=document.getElementById('formulaBox'); if(formula){formula.textContent='';formula.style.display='none';}
+ const selected=document.getElementById('selectedAnswer'); if(selected)selected.textContent='Select an answer, then press CHECK ANSWER.';
+}
+function selectTutor(n,b){
+ if(answered)return;
+ document.querySelectorAll('.option').forEach(el=>el.classList.remove('selected'));
+ b.classList.add('selected');
+ selectedOption=n;
+ const s=document.getElementById('selectedAnswer'); if(s)s.textContent='Answer selected. Press CHECK ANSWER to reveal the result.';
+ const check=document.getElementById('checkAnswer'); if(check)check.disabled=false;
+}
+let selectedOption=-1;
+function checkTutorAnswer(){
+ if(answered||selectedOption<0)return;
+ answered=true; const x=qs[qi]; const correct=x.a.indexOf(x.c); const picked=selectedOption;
+ document.querySelectorAll('.option').forEach((el,k)=>{el.disabled=true;if(k===correct)el.classList.add('correct');if(k===picked&&k!==correct)el.classList.add('wrong')});
+ const isCorrect=picked===correct; if(isCorrect)earnedMarks+=(x.marks||1);
+ const fb=document.getElementById('feedback');
+ if(isCorrect){fb.innerHTML=`<div class="tutorGood">✅ <b>Excellent!</b> Correct answer: <b>${x.c}</b></div><div class="explanation">${x.e}</div>`;playTone('correct');speak('Excellent! '+x.e)}
+ else{fb.innerHTML=`<div class="tutorTry">❌ <b>Try Again!</b> The correct answer is: <b>${x.c}</b></div><div class="explanation">${x.e}</div>`;playTone('wrong');speak('Try Again. The correct answer is '+x.c+'. '+x.e)}
+ const formula=document.getElementById('formulaBox'); if(formula&&x.formula){formula.textContent='📐 Formula / rule: '+x.formula;formula.style.display='block';}
+ document.getElementById('score').textContent=`Score: ${earnedMarks} / ${totalMarks}`;
+ bar.style.width=`${(qi+1)/qs.length*100}%`;
+ const check=document.getElementById('checkAnswer');if(check)check.style.display='none';
+ next.style.display='inline-block';next.textContent=qi<qs.length-1?'Next Question →':'Finish Tutor Session';
+}
+function nextQ(){if(!answered)return;if(qi<qs.length-1){qi++;selectedOption=-1;renderTutor();playTone('next');speak(`Question ${qi+1}. ${qs[qi].q}`)}else{showFinalResult();}}
+function showFinalResult(){
+  const pct=Math.round((earnedMarks/totalMarks)*100); const grade=pct>=90?'Physics Master!':pct>=75?'Great Work!':pct>=60?'Good Job!':'Keep Practicing!';
+  const medal=pct>=90?'🏆':pct>=75?'🥇':pct>=60?'🥈':'💪';
+  qtitle.textContent='🏆 Tutor Session Complete!'; question.textContent=''; options.innerHTML='';
+  feedback.innerHTML=`<div class="resultBox" style="display:block"><div class="medal">${medal}</div><div class="resultScore">${pct}%</div><div class="resultMsg">${grade}</div><div class="sub">You scored <b>${earnedMarks} / ${totalMarks}</b> marks in <b>${currentTopic}</b>.</div>
+  <div class="resultForm"><label>Student Name</label><input id="studentName" placeholder="Enter your name"><label>Student Email</label><input id="studentEmail" type="email" placeholder="Enter your email"><button onclick="sendResult()">📤 SEND MY SCORE</button><button class="secondary" style="margin-left:7px" onclick="copyResult()">📋 Copy Result</button><div class="sendStatus" id="sendStatus"></div></div></div>`;
+  speak(`Tutor session complete. You scored ${pct} percent. ${grade}`);
+  next.style.display='inline-block'; next.textContent='Restart Topic'; next.onclick=()=>{startEssentialTopic(currentTopic,currentUnit)};
+  localStorage.setItem('lastPhysicsResult',JSON.stringify({score:earnedMarks,total:totalMarks,pct,grade,lesson:currentTopic,date:new Date().toISOString()}));
+}
+const TEACHER_ENDPOINT='';
+async function sendResult(){
+ const name=(document.getElementById('studentName')||{}).value?.trim(); const email=(document.getElementById('studentEmail')||{}).value?.trim(); const status=document.getElementById('sendStatus');
+ if(!name||!email){status.textContent='Please enter your name and email.';speak('Please enter your name and email.');return}
+ const pct=Math.round(earnedMarks/totalMarks*100), payload={studentName:name,studentEmail:email,lesson:currentTopic||pdfLesson?.title||'Physics Lesson',score:earnedMarks,total:totalMarks,percentage:pct,date:new Date().toLocaleString()};
+ if(!TEACHER_ENDPOINT){
+   const subject=encodeURIComponent(`Mr. Milad Physics Lab Result - ${name}`); const body=encodeURIComponent(`Student: ${name}
+Email: ${email}
+Topic: ${currentTopic||pdfLesson?.title||'Physics Lesson'}
+Score: ${earnedMarks}/${totalMarks}
+Percentage: ${pct}%
+Date: ${payload.date}`);
+   status.innerHTML=`No online teacher endpoint is configured yet. <a href="mailto:?subject=${subject}&body=${body}" style="color:var(--cyan)">Open email to send the result</a>.`;
+   speak('Your result is ready. Please use the email button to send it.'); return;
+ }
+ try{status.textContent='Sending your result...';const r=await fetch(TEACHER_ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});if(!r.ok)throw new Error('send failed');status.textContent='✅ Result sent successfully to the teacher!';speak('Excellent! Your score has been sent successfully.');}catch(e){status.textContent='Could not send online. Use Copy Result or the email option.';speak('The online send did not work. Please use the email option.')}}
+function copyResult(){const name=document.getElementById('studentName')?.value||'Student';const email=document.getElementById('studentEmail')?.value||'';const pct=Math.round(earnedMarks/totalMarks*100);const text=`Mr. Milad Physics Lab Tutor Result
+Student: ${name}
+Email: ${email}
+Topic: ${currentTopic}
+Score: ${earnedMarks}/${totalMarks}
+Percentage: ${pct}%`;navigator.clipboard?.writeText(text);document.getElementById('sendStatus').textContent='✅ Result copied. You can paste it into WhatsApp, email, or Classroom.';speak('Result copied successfully.');}
+function cleanPdfText(text){return String(text||'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()}
+async function extractSelectableText(file){
+  const buf=await file.arrayBuffer();
+  const loadingTask=pdfjsLib.getDocument({data:buf});
+  const pdf=await loadingTask.promise;
+  let text='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const tc=await page.getTextContent();
+    text+=' '+tc.items.map(x=>x.str||'').join(' ');
+  }
+  return {text:cleanPdfText(text),pdf};
+}
+async function extractWithOCR(pdf){
+  if(!window.Tesseract) throw new Error('OCR library could not load.');
+  let text='';
+  const pages=Math.min(pdf.numPages,10);
+  for(let i=1;i<=pages;i++){
+    document.getElementById('pdfStatus').textContent=`🔎 OCR reading page ${i} of ${pages}...`;
+    const page=await pdf.getPage(i);
+    const viewport=page.getViewport({scale:2});
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    await page.render({canvasContext:ctx,viewport}).promise;
+    const result=await Tesseract.recognize(canvas,'eng',{
+      logger:m=>{
+        if(m.status==='recognizing text') document.getElementById('pdfStatus').textContent=`🔎 OCR page ${i}/${pages}: ${Math.round((m.progress||0)*100)}%`;
+      }
+    });
+    text+=' '+(result.data?.text||'');
+  }
+  return cleanPdfText(text);
+}
+async function readPDFForQuiz(){
+  if(!pdfFile) throw new Error('No PDF selected.');
+  // First try normal PDF text extraction. This is fast and works for most Cambridge PDFs.
+  let data;
+  try{ data=await extractSelectableText(pdfFile); }
+  catch(err){
+    console.warn('PDF text extraction failed; retrying...',err);
+    // Retry once with the PDF.js worker disabled. This helps when the HTML is opened directly from file://.
+    try{
+      if(window.pdfjsLib?.GlobalWorkerOptions) pdfjsLib.GlobalWorkerOptions.disableWorker=true;
+      data=await extractSelectableText(pdfFile);
+    }catch(err2){ throw err2; }
+    finally{ if(window.pdfjsLib?.GlobalWorkerOptions) pdfjsLib.GlobalWorkerOptions.disableWorker=false; }
+  }
+  if(data.text.length>=80) return {text:data.text,pdf:data.pdf,method:'text'};
+  // Scanned/image PDF: use OCR only when there is not enough selectable text.
+  const ocrText=await extractWithOCR(data.pdf);
+  if(ocrText.length>=40) return {text:ocrText,pdf:data.pdf,method:'ocr'};
+  // Last-resort: return empty text with the PDF object so the quiz can still be built from the lesson metadata.
+  return {text:'',pdf:data.pdf,method:'metadata'};
+}
+function detectLesson(text){
+  const t=String(text||'').toLowerCase();
+  const topics=[
+    {keys:['measurement','measuring','physical quantity','significant figures','unit','ruler','vernier','micrometer'],title:'Making Measurements',ar:'إجراء القياسات',objective:'Use appropriate instruments, units and methods to make reliable physical measurements.',ideas:['Choose an appropriate measuring instrument.','Use suitable SI units and record measurements carefully.','Consider resolution, repeat readings and uncertainty.'],vocab:[['Measurement','القياس'],['Unit','الوحدة'],['Resolution','التمييز']]},
+    {keys:['distance-time','distance time','gradient','cyclist','speed-time graph','rana'],title:'Motion: Distance–Time Graphs',ar:'الحركة: الرسوم البيانية للمسافة والزمن',objective:'Interpret distance–time graphs and use gradient to compare speed.',ideas:['A straight sloping line represents steady speed.','A horizontal line represents a stationary object.','A steeper gradient means a greater speed.'],vocab:[['Distance','المسافة'],['Time','الزمن'],['Gradient','الميل'],['Speed','السرعة']]},
+    {keys:['speed','average speed','velocity','acceleration','free fall','falling object'],title:'Motion: Speed, Acceleration & Free Fall',ar:'الحركة: السرعة والعجلة والسقوط الحر',objective:'Calculate speed and acceleration and describe changing motion.',ideas:['Speed is distance divided by time.','Acceleration is change in velocity per unit time.','A changing gradient on a motion graph indicates changing speed.'],vocab:[['Speed','السرعة'],['Acceleration','العجلة'],['Free fall','السقوط الحر']]},
+    {keys:['mass','density','force and motion','resultant force','friction','momentum','explosion','impact force'],title:'Forces & Motion',ar:'القوى والحركة',objective:'Explain how mass, density, force, momentum and impact affect motion.',ideas:['Unbalanced forces change motion.','Density links mass and volume.','Momentum is important when analysing impacts and explosions.'],vocab:[['Mass','الكتلة'],['Density','الكثافة'],['Force','القوة'],['Momentum','الزخم']]},
+    {keys:['moment','principle of moments','centre of gravity','center of gravity','equilibrium','stability','instability','vector'],title:'Forces in Equilibrium',ar:'القوى في حالة الاتزان',objective:'Use moments, centre of gravity and vectors to analyse equilibrium and stability.',ideas:['A balanced object has no resultant force or turning effect.','The principle of moments compares clockwise and anticlockwise moments.','Centre of gravity and base area affect stability.'],vocab:[['Moment','عزم القوة'],['Equilibrium','الاتزان'],['Centre of gravity','مركز الثقل'],['Stability','الثبات']]},
+    {keys:['energy transfer','conservation of energy','fuel','nuclear energy','wind','water','sun','earth','environment','work done','coal','power station'],title:'Energy',ar:'الطاقة',objective:'Describe energy transfers, conservation and different energy resources.',ideas:['Energy is transferred between stores and pathways.','Energy is conserved even when useful output is less than input.','Different fuels and renewable resources have different advantages and disadvantages.'],vocab:[['Energy transfer','انتقال الطاقة'],['Conservation','الحفظ'],['Renewable','متجدد'],['Power','القدرة']]},
+    {keys:['thermal','temperature','conduction','convection','radiation','state change','melting','boiling','evaporation','specific heat'],title:'Thermal Physics',ar:'الفيزياء الحرارية',objective:'Understand temperature, thermal energy and heat transfer.',ideas:['Thermal energy moves from hotter to colder regions.','Conduction transfers energy through particle interactions.','Convection and infrared radiation are other transfer mechanisms.'],vocab:[['Temperature','درجة الحرارة'],['Thermal energy','الطاقة الحرارية'],['Conduction','التوصيل'],['Insulator','عازل']]},
+    {keys:['pressure','volume','gas','gas pressure','atmospheric pressure'],title:'Pressure & Gases',ar:'الضغط والغازات',objective:'Describe pressure and the relationship between pressure, volume and temperature.',ideas:['Pressure is force per unit area.','Gas pressure results from particle collisions with surfaces.','Changing volume or temperature can change gas pressure.'],vocab:[['Pressure','الضغط'],['Volume','الحجم'],['Gas','الغاز']]},
+    {keys:['current','voltage','resistance','circuit','charge','electrical power','electrical energy','emf'],title:'Electricity',ar:'الكهرباء',objective:'Describe current, charge, voltage, resistance, power and energy in circuits.',ideas:['Current is the rate of flow of charge.','Potential difference is energy transferred per unit charge.','Resistance affects current for a given potential difference.'],vocab:[['Current','التيار'],['Charge','الشحنة'],['Voltage','فرق الجهد'],['Resistance','المقاومة']]},
+    {keys:['magnet','magnetic field','electromagnet','motor','generator','transformer','electromagnetic induction'],title:'Magnetism & Electromagnetism',ar:'المغناطيسية والكهرومغناطيسية',objective:'Explain magnetic fields and electromagnetic devices.',ideas:['Electric current can produce a magnetic field.','Electromagnets can be controlled by changing current or turns.','Motors, generators and transformers use electromagnetic effects.'],vocab:[['Magnetic field','المجال المغناطيسي'],['Electromagnet','المغناطيس الكهربائي'],['Generator','المولد'],['Transformer','المحول']]},
+    {keys:['wave','frequency','wavelength','amplitude','sound','ultrasound','diffraction','refraction','reflection'],title:'Waves',ar:'الموجات',objective:'Describe wave properties and how waves transfer energy.',ideas:['Frequency is the number of cycles per second.','Wavelength is the distance between corresponding points.','Amplitude is related to maximum displacement.'],vocab:[['Frequency','التردد'],['Wavelength','الطول الموجي'],['Amplitude','السعة'],['Wave speed','سرعة الموجة']]},
+    {keys:['light','reflection','refraction','lens','ray diagram','critical angle','total internal reflection'],title:'Light',ar:'الضوء',objective:'Describe reflection, refraction, lenses and ray behaviour.',ideas:['Reflection changes the direction of light at a surface.','Refraction occurs when light changes speed between media.','Lenses form images by refracting light.'],vocab:[['Reflection','الانعكاس'],['Refraction','الانكسار'],['Lens','عدسة'],['Ray','شعاع']]},
+    {keys:['radioactive','radioactivity','alpha','beta','gamma','half-life','nuclear decay','fission','fusion'],title:'Radioactivity & Nuclear Physics',ar:'النشاط الإشعاعي والفيزياء النووية',objective:'Compare nuclear radiation and describe radioactive decay and nuclear processes.',ideas:['Alpha, beta and gamma have different properties and penetrating powers.','Radioactive decay is spontaneous.','Nuclear processes involve changes in atomic nuclei and energy.'],vocab:[['Alpha','ألفا'],['Beta','بيتا'],['Gamma','جاما'],['Half-life','نصف العمر']]},
+    {keys:['space','planet','star','solar system','orbit','redshift','big bang','satellite'],title:'Space Physics',ar:'فيزياء الفضاء',objective:'Describe motion, orbits and key ideas about stars and the Universe.',ideas:['Objects can move in orbits due to gravitational effects.','Stars emit radiation across the electromagnetic spectrum.','Observations provide evidence about the Universe.'],vocab:[['Orbit','مدار'],['Star','نجم'],['Galaxy','مجرة']]}
+  ];
+  let best=topics[0],bestScore=0;
+  for(const topic of topics){let score=0;for(const k of topic.keys){if(t.includes(k))score += k.length>8?3:2;}if(score>bestScore){bestScore=score;best=topic;}}
+  if(bestScore===0){
+    const title=(pdfFile?.name||'Uploaded Physics Lesson').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
+    return {title:title||'Uploaded Physics Lesson',ar:'درس الفيزياء المرفوع',objective:'Study the Physics concepts contained in the uploaded lesson and check understanding with a PDF-based quiz.',ideas:['The quiz will be built from evidence detected in your uploaded PDF.','Key terms and statements are taken from the uploaded lesson.','The generated questions are linked to the uploaded content.'],vocab:[['Physics','الفيزياء'],['Lesson','الدرس'],['Evidence','الدليل من الملف']],uploaded:true};
+  }
+  return best;
+}
+function sentenceList(text){
+  return String(text||'').replace(/\s+/g,' ').split(/(?<=[.!?])\s+/).map(x=>x.trim()).filter(x=>x.length>=35&&x.length<=240);
+}
+function extractDefinitions(text){
+  const out=[]; const re=/\b([A-Za-z][A-Za-z\- ]{2,35})\s+(?:is|means|refers to|is defined as)\s+([^.!?]{10,140})[.!?]/gi; let m;
+  while((m=re.exec(text))&&out.length<12){const term=m[1].trim(),def=m[2].trim();if(term.split(/\s+/).length<=6)out.push({term,def});}
+  return out;
+}
+function makePDFQuestions(text,lesson){
+  const sentences=sentenceList(text), defs=extractDefinitions(text), result=[];
+  const seen=new Set();
+  // 1) Definitions genuinely extracted from the uploaded PDF.
+  for(const d of defs){
+    const distractors=defs.filter(x=>x.term.toLowerCase()!==d.term.toLowerCase()).slice(0,3).map(x=>x.def);
+    if(distractors.length<3)continue;
+    const a=[d.def,...distractors].sort(()=>Math.random()-.5); result.push({q:`According to your uploaded PDF, what is ${d.term}?`,a,c:a.indexOf(d.def),e:`Your PDF states that ${d.term} ${d.def}.`});
+    if(result.length>=3)break;
+  }
+  // 2) Statement-comprehension questions built from actual PDF sentences.
+  const pool=sentences.filter(x=>!/^question\s*\d/i.test(x));
+  for(const correct of pool){
+    if(result.length>=7)break;
+    const key=correct.toLowerCase(); if(seen.has(key))continue; seen.add(key);
+    const distract=pool.filter(x=>x!==correct).sort(()=>Math.random()-.5).slice(0,3); if(distract.length<3)continue;
+    const a=[correct,...distract].sort(()=>Math.random()-.5);
+    result.push({q:`Which statement is supported by your uploaded PDF?`,a,c:a.indexOf(correct),e:`This statement was taken from the content detected in your uploaded lesson.`});
+  }
+  // 3) Topic-specific questions are supplemental, never the primary source.
+  if(result.length<7){
+    const bank=findQuizBank(lesson.title,false); for(const q of bank){if(result.length>=7)break;result.push({...q,a:[...q.a],e:`Topic practice: ${q.e}`});}
+  }
+  return result.slice(0,7);
+}
+async function generateLessonFromPDF(){
+  if(!pdfFile)return;
+  const out=document.getElementById('lessonResult'); out.style.display='block'; out.innerHTML='<div class="mini">⏳ Reading your PDF...</div>';
+  try{
+    const data=await readPDFForQuiz(); pdfText=data.text; pdfLesson=detectLesson(pdfText);
+    const sourceLabel=data.method==='ocr'?'OCR':data.method==='text'?'selectable text':'PDF metadata';
+    document.getElementById('pdfStatus').textContent=`✅ PDF read successfully using ${sourceLabel}. Topic detected: ${pdfLesson.title}.`;
+    out.innerHTML=`<div class="mini"><h4>✨ ${pdfLesson.title}</h4><p style="color:var(--green)"><b>📄 Source:</b> ${pdfFile.name} — this lesson is based on your uploaded PDF.</p><p><b>العنوان:</b> ${pdfLesson.ar}</p><p><b>Learning Objective:</b> ${pdfLesson.objective}</p><p><b>Key Ideas</b></p><ul>${pdfLesson.ideas.map(x=>`<li>${x}</li>`).join('')}</ul><p><b>Vocabulary</b></p>${pdfLesson.vocab.map(x=>`<div>🔹 <b>${x[0]}</b> — ${x[1]}</div>`).join('')}<div class="actions"><button class="small" onclick="speak(${JSON.stringify(pdfLesson.objective+' '+pdfLesson.ideas.join(' '))})">🔊 Narrate Lesson</button><button class="small secondary" onclick="generateQuizFromPDF()">🧠 Generate Quiz from PDF</button></div></div>`;
+    speak(`Your Physics lesson is ready. ${pdfLesson.title}. ${pdfLesson.objective}`);
+  }catch(e){
+    console.error(e);
+    out.innerHTML='<div class="mini">⚠️ I could not read this PDF. Please check that it is a valid PDF. If it is a scanned PDF, make sure you are online so OCR can load.</div>';
+    document.getElementById('pdfStatus').textContent='⚠️ PDF reading failed. Try again or use a PDF with selectable text.';
+  }
+}
+async function generateQuizFromPDF(){
+  if(!pdfFile){toast('Please choose a Physics PDF first.');return;}
+  const status=document.getElementById('pdfStatus');
+  status.textContent='⏳ Building a quiz from your uploaded PDF...';
+  try{
+    // IMPORTANT: reuse the text already extracted by Generate Lesson.
+    // This prevents a second unnecessary OCR pass and guarantees the quiz belongs to this upload.
+    let data;
+    if(pdfText || pdfLesson) data={text:pdfText,pdf:null,method:pdfText?'cached':'metadata'};
+    else data=await readPDFForQuiz();
+    pdfText=data.text||'';
+    if(!pdfLesson) pdfLesson=detectLesson(pdfText);
+    const generated=buildQuizFromPDFText(pdfText,pdfLesson);
+    if(!generated.length) throw new Error('Could not create questions from this lesson');
+    qs=generated.map(q=>({...q,a:[...q.a]})); qi=0; score=0; answered=false; pdfQuizGenerated=true;
+    document.getElementById('qtitle').textContent=`🧠 ${pdfLesson.title} — Quiz from ${pdfFile.name}`;
+    document.getElementById('lab').scrollIntoView({behavior:'smooth',block:'start'});
+    render();
+    setTimeout(()=>{document.getElementById('question')?.focus();speak(`Your quiz is ready. ${pdfLesson.title}. Question one. ${qs[0].q}`)},500);
+    const source=data.method==='ocr'?'OCR':pdfText?'the uploaded PDF text':'the uploaded lesson content';
+    status.textContent=`✅ Quiz generated from “${pdfFile.name}” using ${source}. ${qs.length} questions ready.`;
+    toast(`🧠 PDF Quiz Ready: ${qs.length} questions`);
+  }catch(e){
+    console.error(e);
+    status.textContent=`⚠️ Quiz generation failed: ${e.message||'Unknown error'}.`;
+    toast('PDF quiz generation failed.');
+    speak('I could not generate the quiz from this uploaded lesson. Please try again.');
+  }
+}
+const quizBanks={
+'Physics Core':[
+{q:'What is the SI unit of force?',a:['newton','joule','watt','pascal'],c:0,e:'The SI unit of force is the newton (N).'},
+{q:'Which quantity is measured in joules?',a:['Energy','Force','Pressure','Current'],c:0,e:'Energy is measured in joules (J).'},
+{q:'What is the SI unit of power?',a:['watt','volt','ohm','tesla'],c:0,e:'Power is measured in watts (W).'},
+{q:'What does density describe?',a:['Mass per unit volume','Force per unit area','Energy per unit time','Distance per unit time'],c:0,e:'Density is mass divided by volume.'},
+{q:'What does acceleration describe?',a:['Change in velocity per unit time','Distance divided by mass','Energy transferred per unit charge','Force per unit area'],c:0,e:'Acceleration is the change in velocity per unit time.'},
+{q:'What is the main unit of electric current?',a:['ampere','volt','ohm','coulomb'],c:0,e:'Current is measured in amperes (A).'},
+{q:'Which transfer method can occur through empty space?',a:['Radiation','Conduction','Convection','None'],c:0,e:'Electromagnetic radiation can transfer energy through a vacuum.'}
+],
+'Thermal Physics':[
+{q:"What is temperature a measure of?",a:["How much mass an object has","How hot or cold an object is","How much force an object has","How fast an object moves"],c:1,e:"Temperature tells us how hot or cold an object is."},
+{q:"In which direction does thermal energy naturally transfer?",a:["From colder to hotter regions","From hotter to colder regions","Only upwards","It does not transfer"],c:1,e:"Thermal energy transfers from a hotter region to a colder region."},
+{q:"What is conduction?",a:["Energy transfer through particle interactions","Movement of an object through space","Reflection of light","Production of electricity"],c:0,e:"Conduction transfers thermal energy through interactions between particles."},
+{q:"Which material is usually a good thermal insulator?",a:["Copper","Aluminium","Plastic","Iron"],c:2,e:"Plastic is commonly used as a thermal insulator because it conducts heat poorly."},
+{q:"What happens to particles when a substance is heated?",a:["They generally gain thermal energy","They disappear","They always become heavier","They stop moving"],c:0,e:"Heating gives particles more thermal energy, so their motion generally increases."},
+{q:"Which object would transfer thermal energy most easily by conduction?",a:["A metal spoon","A plastic ruler","A wooden stick","A foam cup"],c:0,e:"Metals are generally good thermal conductors."},
+{q:"Why are insulating materials useful?",a:["They increase unwanted heat transfer","They reduce unwanted thermal energy transfer","They create mass","They make objects move faster"],c:1,e:"Insulators reduce unwanted thermal energy transfer."}
+],
+'Forces & Motion':[
+{q:"What is a force?",a:["A push or pull","A type of energy only","A measurement of temperature","A unit of time"],c:0,e:"A force is a push or a pull."},
+{q:"What happens when forces on an object are unbalanced?",a:["Its motion can change","Its mass disappears","Its temperature becomes zero","Nothing can happen"],c:0,e:"An unbalanced force causes a change in motion, such as acceleration."},
+{q:"What is acceleration?",a:["Change in velocity per unit time","Distance divided by mass","Force divided by time","Mass multiplied by speed"],c:0,e:"Acceleration is the rate of change of velocity."},
+{q:"What does friction usually do?",a:["Opposes relative motion","Always makes objects accelerate","Creates mass","Stops gravity"],c:0,e:"Friction opposes relative motion between surfaces."},
+{q:"Which force pulls objects toward Earth?",a:["Friction","Gravity","Tension","Upthrust"],c:1,e:"Gravity attracts objects toward Earth."},
+{q:"If the resultant force is zero, an object can be...",a:["Stationary or moving at constant velocity","Only accelerating","Only falling","Always changing direction"],c:0,e:"Zero resultant force means no acceleration, so the object may be stationary or move at constant velocity."},
+{q:"Which quantity tells how quickly velocity changes?",a:["Acceleration","Mass","Distance","Temperature"],c:0,e:"Acceleration describes how quickly velocity changes."}
+],
+'Electricity':[
+{q:"What is electric current?",a:["The rate of flow of charge","Energy stored in a battery","Resistance to motion","The mass of electrons"],c:0,e:"Current is the rate of flow of electric charge."},
+{q:"What does a voltage provide in a circuit?",a:["Energy per unit charge","Mass per unit volume","Force per unit time","Temperature per second"],c:0,e:"Voltage is the energy transferred per unit charge."},
+{q:"What does resistance do?",a:["Opposes current","Creates charge","Always increases voltage","Removes electrons from atoms"],c:0,e:"Resistance opposes the flow of current."},
+{q:"Which component is designed to limit current?",a:["Resistor","Switch only","Ammeter","Wire only"],c:0,e:"A resistor is used to provide resistance and limit current."},
+{q:"What is the unit of current?",a:["Ampere (A)","Volt (V)","Ohm (Ω)","Watt (W)"],c:0,e:"Current is measured in amperes, or amps."},
+{q:"What is the unit of resistance?",a:["Ohm (Ω)","Ampere (A)","Volt (V)","Joule (J)"],c:0,e:"Resistance is measured in ohms, symbol Ω."},
+{q:"What is needed for a simple circuit to allow continuous current?",a:["A complete conducting path","Only a bulb","Only a switch","An open circuit"],c:0,e:"The circuit must provide a complete conducting path."}
+],
+'Waves':[
+{q:"What is frequency?",a:["Number of cycles per second","Height of a wave","Distance travelled in one hour","Speed divided by mass"],c:0,e:"Frequency is the number of complete cycles per second."},
+{q:"What is wavelength?",a:["Distance between corresponding points on successive waves","Maximum displacement only","Number of waves per second","Wave speed only"],c:0,e:"Wavelength is the distance between corresponding points, such as crest to crest."},
+{q:"What does amplitude describe?",a:["Maximum displacement from the rest position","Number of cycles per second","Distance between crests","Time for one cycle"],c:0,e:"Amplitude is the maximum displacement from the rest position."},
+{q:"What do waves transfer?",a:["Energy","Mass only","Temperature only","Charge only"],c:0,e:"Waves transfer energy from one place to another."},
+{q:"Which quantity is measured in hertz (Hz)?",a:["Frequency","Wavelength","Amplitude","Speed"],c:0,e:"Frequency is measured in hertz."},
+{q:"A larger amplitude generally means a wave has...",a:["Greater maximum displacement","Lower frequency automatically","Zero energy","Shorter wavelength automatically"],c:0,e:"A larger amplitude means greater maximum displacement."},
+{q:"What is the distance from one crest to the next crest called?",a:["Wavelength","Amplitude","Frequency","Period"],c:0,e:"The crest-to-crest distance is one wavelength."}
+],
+'Magnetism & Electromagnetism':[
+{q:"What can an electric current produce?",a:["A magnetic field","Only light","Only sound","No effect"],c:0,e:"An electric current produces a magnetic field around the conductor."},
+{q:"How can an electromagnet be made stronger?",a:["Increase current or number of turns","Remove the coil","Use no current","Open the circuit"],c:0,e:"Increasing current or the number of coil turns can strengthen an electromagnet."},
+{q:"What does a generator do?",a:["Converts mechanical energy into electrical energy","Converts electricity into mass","Stops magnetic fields","Measures temperature"],c:0,e:"A generator uses electromagnetic induction to produce electrical energy from mechanical energy."},
+{q:"What does a motor do?",a:["Converts electrical energy into mechanical motion","Converts mass into charge","Measures resistance only","Produces thermal energy only"],c:0,e:"A motor uses electrical energy to produce mechanical motion."},
+{q:"What is the region around a magnet where magnetic effects act called?",a:["Magnetic field","Electric current","Resistance","Pressure"],c:0,e:"The magnetic field is the region around a magnet where magnetic forces act."},
+{q:"What happens when two like magnetic poles are brought together?",a:["They repel","They attract","They disappear","They become neutral"],c:0,e:"Like poles repel each other."},
+{q:"A transformer is used to change...",a:["AC voltage","Mass","Temperature","Distance"],c:0,e:"A transformer changes the voltage of an alternating-current supply."}
+],
+'Radioactivity':[
+{q:"Which radiation has the greatest penetrating power?",a:["Alpha","Beta","Gamma","All are equal"],c:2,e:"Gamma radiation has the greatest penetrating power of the three."},
+{q:"Which radiation is positively charged?",a:["Alpha","Beta","Gamma","None"],c:0,e:"Alpha particles have a positive charge."},
+{q:"Which radiation is negatively charged?",a:["Alpha","Beta","Gamma","None"],c:1,e:"Beta radiation consists of fast-moving electrons and is negatively charged."},
+{q:"What is radioactive decay?",a:["A spontaneous change in an unstable nucleus","Heating a solid","Moving an object","Charging a battery"],c:0,e:"Radioactive decay is a spontaneous change in an unstable atomic nucleus."},
+{q:"Which radiation is not deflected by electric or magnetic fields?",a:["Alpha","Beta","Gamma","All are deflected"],c:1,e:"Gamma radiation is uncharged, so it is not deflected by electric or magnetic fields."},
+{q:"What is alpha radiation made of?",a:["Helium nuclei","Electrons","Photons","Neutrons only"],c:0,e:"An alpha particle is a helium nucleus."},
+{q:"Why is radiation safety important?",a:["Ionising radiation can damage living tissue","It always makes objects heavier","It stops gravity","It creates oxygen"],c:0,e:"Ionising radiation can damage living tissue, so appropriate safety measures are important."}
+],
+'Distance–Time Graphs':qs
+};
+function buildQuizFromPDFText(text,lesson){
+  const detected=String(lesson?.title||'').toLowerCase();
+  const topic=Object.keys(topicBanks).find(k=>detected.includes(k.split(' ')[1]?.toLowerCase()||'___')||detected.includes(k.toLowerCase()));
+  if(topic&&topicBanks[topic]) return topicBanks[topic].slice(0,10).map(x=>({q:x.q,a:[...x.options],c:x.answer,e:x.e,marks:x.marks,formula:x.formula||''}));
+  return [];
+}
+
+function findQuizBank(title,useDefault=true){
+ if(quizBanks[title]) return quizBanks[title];
+ const t=String(title||'').toLowerCase();
+ const key=Object.keys(quizBanks).find(k=>t.includes(k.toLowerCase())||k.toLowerCase().includes(t));
+ if(key) return quizBanks[key];
+ return useDefault ? (quizBanks['Physics Core']||[]) : [];
+}
+function startTopicQuiz(title){
+ const bank=findQuizBank(title,false);
+ if(!bank.length){toast('No ready-made quiz exists for this topic. Use Generate Quiz from PDF to build one from your uploaded lesson.'); return;}
+ qs=bank.map(q=>({...q,a:[...q.a]}));
+ qi=0;score=0;answered=false;
+ document.getElementById('qtitle').textContent=`🎯 ${title} Challenge`;
+ document.getElementById('lab').scrollIntoView({behavior:'smooth',block:'start'});
+ render();
+ setTimeout(()=>document.getElementById('question')?.focus(),450);
+ toast(`🎯 ${title} quiz started!`);
+ speak(`Let's practice ${title}. Question one. ${qs[0].q}`);
+}
+function loadGeneratedQuiz(title){startTopicQuiz(title)}
+
+
+
+const essentialPhysicsUnits=[{"unit": "Unit 1", "title": "Motion", "topics": ["1.1 Making measurements", "1.2 Distance–time graphs", "1.3 More about speed", "1.4 Acceleration", "1.5 More about acceleration", "1.6 Free fall"]}, {"unit": "Unit 2", "title": "Forces and their effects", "topics": ["2.1 Mass and weight", "2.2 Density", "2.3 Force and shape", "2.4 Force and motion", "2.5 More about force and motion", "2.6 Momentum", "2.7 Explosions", "2.8 Impact forces"]}, {"unit": "Unit 3", "title": "Forces in equilibrium", "topics": ["3.1 Moments", "3.2 Moments in balance", "3.3 The Principle of Moments", "3.4 Centre of gravity", "3.5 Stability", "3.6 More about vectors"]}, {"unit": "Unit 4", "title": "Energy", "topics": ["4.1 Energy transfers", "4.2 Conservation of energy", "4.3 Fuel for electricity", "4.4 Nuclear energy", "4.5 Energy from wind and water", "4.6 Energy from the Sun and the Earth", "4.7 Energy and the environment", "4.8 Energy and work", "4.9 Power"]}, {"unit": "Unit 5", "title": "Pressure", "topics": ["5.1 Under pressure", "5.2 Pressure at work", "5.3 Pressure in a liquid at rest", "5.4 Solids, liquids and gases", "5.5 More about solids, liquids and gases", "5.6 Gas pressure and temperature", "5.7 Evaporation", "5.8 Gas pressure and volume"]}, {"unit": "Unit 6", "title": "Thermal physics", "topics": ["6.1 Thermal expansion", "6.2 Thermometers", "6.3 Specific heat capacity", "6.4 Change of state", "6.5 Thermal conduction", "6.6 Convection", "6.7 Infrared radiation", "6.8 More about infrared radiation", "6.9 Thermal energy at work"]}, {"unit": "Unit 7", "title": "Waves", "topics": ["7.1 Wave motion", "7.2 Transverse and longitudinal waves", "7.3 Wave properties – reflection and refraction", "7.4 Wave properties – diffraction"]}, {"unit": "Unit 8", "title": "Light", "topics": ["8.1 Reflection of light", "8.2 Refraction of light", "8.3 Refractive index", "8.4 Total internal reflection", "8.5 The converging lens", "8.6 Applications of the converging lens", "8.7 Correction of sight defects", "8.8 Electromagnetic waves", "8.9 Applications of electromagnetic waves", "8.10 More about electromagnetic waves"]}, {"unit": "Unit 9", "title": "Sound", "topics": ["9.1 Sound waves", "9.2 Properties of sound", "9.3 The speed of sound", "9.4 The uses of ultrasound"]}, {"unit": "Unit 10", "title": "Magnetism", "topics": ["10.1 Magnets", "10.2 Magnetic fields", "10.3 More about magnetic materials"]}, {"unit": "Unit 11", "title": "Electric charge", "topics": ["11.1 Static electricity", "11.2 Electric fields", "11.3 Conductors and insulators", "11.4 Charge and current"]}, {"unit": "Unit 12", "title": "Electrical energy", "topics": ["12.1 Batteries and cells", "12.2 Potential difference", "12.3 Resistance", "12.4 More about resistance", "12.5 Electrical power"]}, {"unit": "Unit 13", "title": "Electric circuits", "topics": ["13.1 Circuit components", "13.2 Series circuits", "13.3 Parallel circuits", "13.4 More about series and parallel circuits", "13.5 Sensor circuits", "13.6 Switching circuits", "13.7 Electrical safety", "13.8 More about electrical safety"]}, {"unit": "Unit 14", "title": "Electromagnetism", "topics": ["14.1 Magnetic field patterns", "14.2 The motor effect", "14.3 The electric motor", "14.4 Electromagnetic induction", "14.5 The alternating current generator", "14.6 Transformers", "14.7 High-voltage transmission of electricity"]}, {"unit": "Unit 15", "title": "Radioactivity", "topics": ["15.1 Observing nuclear radiation", "15.2 Alpha, beta and gamma radiation", "15.3 The discovery of the nucleus", "15.4 More about the nucleus", "15.5 Half-life", "15.6 Radioactivity at work"]}, {"unit": "Unit 16", "title": "Space", "topics": ["16.1 The Earth in space", "16.2 The Solar System", "16.3 Planetary orbits", "16.4 The life history of a star", "16.5 The expanding universe", "16.6 The beginning and future of the Universe"]}];
+const essentialUnitBanks={"Unit 1": [{"q": "A runner travels 180 m in 30 s. What is the runner’s average speed?", "c": "6.0 m/s", "w": ["0.17 m/s", "150 m/s", "5400 m/s"], "e": "Average speed = distance ÷ time = 180 ÷ 30."}, {"q": "A car increases its velocity from 8 m/s to 20 m/s in 4 s. What is its acceleration?", "c": "3.0 m/s²", "w": ["7.0 m/s²", "12 m/s²", "48 m/s²"], "e": "Acceleration = change in velocity ÷ time."}, {"q": "A straight section of a distance–time graph rises 100 m in 20 s. What speed does it represent?", "c": "5.0 m/s", "w": ["0.20 m/s", "80 m/s", "2000 m/s"], "e": "The gradient of a distance–time graph is speed."}, {"q": "A stone is dropped in a vacuum near Earth. Which statement best describes its motion?", "c": "Its speed increases because gravity provides nearly constant acceleration.", "w": ["It moves at constant speed from release.", "Its mass decreases as it falls.", "It stops accelerating because there is no air."], "e": "Without air resistance, gravity causes approximately constant acceleration near Earth."}], "Unit 2": [{"q": "A 15 N resultant force acts on a 5 kg trolley. What is the acceleration?", "c": "3 m/s²", "w": ["0.33 m/s²", "10 m/s²", "75 m/s²"], "e": "F = ma, so a = F ÷ m."}, {"q": "A block has mass 600 g and volume 250 cm³. What is its density?", "c": "2.4 g/cm³", "w": ["0.42 g/cm³", "350 g/cm³", "850 g/cm³"], "e": "Density = mass ÷ volume."}, {"q": "A 1200 kg car moves at 10 m/s. What is its momentum?", "c": "12 000 kg m/s", "w": ["120 kg m/s", "1210 kg m/s", "120 000 kg m/s"], "e": "Momentum = mass × velocity."}, {"q": "Why does a crumple zone reduce the average force on passengers during a collision?", "c": "It increases the time over which the momentum changes.", "w": ["It increases the car’s mass.", "It makes the momentum change larger.", "It removes all kinetic energy before impact."], "e": "For the same momentum change, a longer stopping time means a smaller average force."}], "Unit 3": [{"q": "A 25 N force acts 0.40 m perpendicular to a pivot. What is its moment?", "c": "10 N m", "w": ["6.25 N m", "25.4 N m", "62.5 N m"], "e": "Moment = force × perpendicular distance."}, {"q": "A 20 N load acts 0.30 m from a pivot. What force at 0.60 m balances it?", "c": "10 N", "w": ["20 N", "30 N", "40 N"], "e": "For balance, clockwise moment = anticlockwise moment."}, {"q": "Why does lowering the centre of gravity make an object more stable?", "c": "The line of action of its weight is less likely to fall outside its base.", "w": ["Its weight becomes zero.", "Its mass decreases.", "Its base becomes narrower."], "e": "Toppling occurs when the line of action of weight falls outside the base."}, {"q": "Forces of 6 N east and 8 N north act together. What is the resultant magnitude?", "c": "10 N", "w": ["2 N", "14 N", "48 N"], "e": "For perpendicular vectors use Pythagoras: √(6²+8²)."}], "Unit 4": [{"q": "A motor transfers 3600 J of energy in 12 s. What is its power?", "c": "300 W", "w": ["30 W", "312 W", "43 200 W"], "e": "Power = energy transferred ÷ time."}, {"q": "A 40 N force moves a box 5 m in the force direction. How much work is done?", "c": "200 J", "w": ["8 J", "45 J", "800 J"], "e": "Work done = force × distance."}, {"q": "A lamp receives 100 J of electrical energy and gives 15 J as light. What happens to the remaining energy?", "c": "It is transferred mainly to the surroundings as thermal energy.", "w": ["It disappears.", "It is destroyed.", "It becomes extra mass."], "e": "Energy is conserved; unwanted energy is still transferred."}, {"q": "Why does high dependence on fossil fuels create an environmental problem?", "c": "Burning them releases carbon dioxide and other pollutants.", "w": ["They are all renewable.", "They produce no waste gases.", "They do not release energy."], "e": "Combustion of fossil fuels contributes to air pollution and climate change."}], "Unit 5": [{"q": "A force of 300 N acts on an area of 0.60 m². What pressure is produced?", "c": "500 Pa", "w": ["180 Pa", "300.6 Pa", "1800 Pa"], "e": "Pressure = force ÷ area."}, {"q": "Why do wide tyres reduce the pressure a vehicle exerts on soft ground?", "c": "They spread the same force over a larger area.", "w": ["They increase the vehicle’s weight.", "They reduce the contact area.", "They remove gravity."], "e": "For the same force, increasing area reduces pressure."}, {"q": "Two points are in the same liquid. Point A is deeper than Point B. Which has greater pressure?", "c": "Point A.", "w": ["Point B.", "They always have equal pressure.", "Pressure depends only on container shape."], "e": "Pressure in a liquid increases with depth."}, {"q": "A fixed mass of gas is compressed at constant temperature from 500 cm³ to 250 cm³. What happens to its pressure?", "c": "It doubles.", "w": ["It halves.", "It stays constant.", "It becomes one quarter."], "e": "At constant temperature, pressure is inversely proportional to volume."}], "Unit 6": [{"q": "How much energy is needed to heat 1.5 kg of water by 10 °C if c = 4200 J/(kg °C)?", "c": "63 000 J", "w": ["6300 J", "28 000 J", "420 000 J"], "e": "E = mcΔT."}, {"q": "Why is copper commonly used in the base of a cooking pan?", "c": "It is a good thermal conductor.", "w": ["It is a good thermal insulator.", "It prevents all energy transfer.", "It has no mobile electrons."], "e": "Copper transfers thermal energy rapidly."}, {"q": "Why does warm air rise above a heater?", "c": "It expands, becomes less dense, and is displaced by denser cooler air.", "w": ["It becomes more dense.", "Gravity stops acting on it.", "Its particles stop moving."], "e": "Density differences produce convection currents."}, {"q": "Which surface is the best emitter of infrared radiation?", "c": "A dull black surface.", "w": ["A shiny silver surface.", "A polished mirror surface.", "A bright metallic surface."], "e": "Dull black surfaces are good emitters and absorbers of infrared."}], "Unit 7": [{"q": "A wave has frequency 8 Hz and wavelength 1.5 m. What is its speed?", "c": "12 m/s", "w": ["5.3 m/s", "9.5 m/s", "53 m/s"], "e": "Wave speed = frequency × wavelength."}, {"q": "Which statement describes a longitudinal wave?", "c": "Particles vibrate parallel to the direction of energy transfer.", "w": ["Particles vibrate perpendicular to energy transfer.", "No particles vibrate.", "Particles always move with the wave."], "e": "Longitudinal oscillations are parallel to the propagation direction."}, {"q": "A water wave slows down on entering shallow water while its frequency stays constant. What happens to its wavelength?", "c": "It decreases.", "w": ["It increases.", "It stays constant.", "It becomes zero."], "e": "v = fλ, so if v decreases with f constant, λ decreases."}, {"q": "When is diffraction at a gap greatest?", "c": "When the gap width is similar to the wavelength.", "w": ["When the gap is much wider than the wavelength.", "When wavelength is zero.", "When frequency is zero."], "e": "Diffraction is strongest when gap size is comparable to wavelength."}], "Unit 8": [{"q": "A ray strikes a plane mirror at 32° to the normal. What is the angle of reflection?", "c": "32°", "w": ["58°", "64°", "16°"], "e": "Angle of incidence equals angle of reflection."}, {"q": "Light enters glass from air and bends toward the normal. What causes the bending?", "c": "Its speed decreases in the glass.", "w": ["Its frequency becomes zero.", "Its speed increases.", "Its mass increases."], "e": "Refraction occurs because wave speed changes at a boundary."}, {"q": "Light travels at 3.0×10⁸ m/s in vacuum and 2.0×10⁸ m/s in a material. What is the refractive index?", "c": "1.5", "w": ["0.67", "1.0", "6.0"], "e": "n = c ÷ v."}, {"q": "Which electromagnetic wave is commonly used for satellite communication?", "c": "Microwaves.", "w": ["Alpha radiation.", "Sound waves.", "Ultrasound."], "e": "Microwaves can pass through the atmosphere and carry communication signals."}], "Unit 9": [{"q": "Why can sound not travel through a vacuum?", "c": "Sound needs particles to transmit vibrations.", "w": ["Sound is electromagnetic.", "A vacuum absorbs all frequencies.", "Sound has no energy."], "e": "Sound is a mechanical wave and needs a medium."}, {"q": "A sound becomes louder without changing pitch. Which wave property increased?", "c": "Amplitude.", "w": ["Frequency.", "Wave speed in the same medium.", "Time period."], "e": "Loudness is related to amplitude; pitch is related to frequency."}, {"q": "An echo returns 0.60 s after a shout. If sound speed is 340 m/s, how far away is the wall?", "c": "102 m", "w": ["204 m", "566 m", "340 m"], "e": "The measured time is for the round trip: distance = vt/2."}, {"q": "How does medical ultrasound produce an image?", "c": "By detecting echoes from boundaries between different tissues.", "w": ["By using ionising gamma rays.", "By boiling tissue.", "By measuring only body temperature."], "e": "Echo timing and intensity reveal internal boundaries."}], "Unit 10": [{"q": "Two north poles are brought close together. What happens?", "c": "They repel.", "w": ["They attract.", "They become neutral.", "Nothing happens."], "e": "Like poles repel; unlike poles attract."}, {"q": "What does the direction of a magnetic field line show?", "c": "The direction a north test pole would be pushed.", "w": ["The direction of heat flow.", "The direction of gravity.", "The direction electrons must always travel."], "e": "Field direction is defined using a north test pole."}, {"q": "Why is soft iron suitable for the core of an electromagnet?", "c": "It magnetises strongly and loses most magnetism when current is switched off.", "w": ["It cannot be magnetised.", "It is permanently magnetised.", "It has infinite resistance."], "e": "Soft magnetic materials are easy to magnetise and demagnetise."}, {"q": "How can the strength of an electromagnet be increased?", "c": "Increase the current through its coil.", "w": ["Remove the iron core.", "Reduce the number of turns to zero.", "Open the circuit."], "e": "A larger current produces a stronger magnetic field."}], "Unit 11": [{"q": "A plastic rod becomes negatively charged after rubbing. What happened?", "c": "It gained electrons.", "w": ["It gained protons.", "It lost neutrons.", "It gained positive ions only."], "e": "Negative charge means excess electrons."}, {"q": "A positive test charge is placed in an electric field. What happens?", "c": "It experiences a force in the field direction.", "w": ["It experiences no force.", "It always moves opposite the field.", "Its mass becomes zero."], "e": "Electric field direction is defined by the force on a positive test charge."}, {"q": "Why do metals conduct electricity well?", "c": "They contain mobile electrons.", "w": ["Their protons move freely.", "They have no charged particles.", "Their nuclei flow through the wire."], "e": "Mobile electrons carry charge through metals."}, {"q": "A current of 2.5 A flows for 4 s. How much charge passes?", "c": "10 C", "w": ["0.625 C", "6.5 C", "25 C"], "e": "Q = It."}], "Unit 12": [{"q": "A component transfers 24 J when 6 C passes through it. What is the potential difference?", "c": "4 V", "w": ["0.25 V", "18 V", "144 V"], "e": "V = E ÷ Q."}, {"q": "A resistor has 9 V across it and a current of 0.75 A. What is its resistance?", "c": "12 Ω", "w": ["6.75 Ω", "9.75 Ω", "0.083 Ω"], "e": "R = V ÷ I."}, {"q": "A device operates at 12 V and 3 A. What is its power?", "c": "36 W", "w": ["4 W", "15 W", "144 W"], "e": "P = VI."}, {"q": "What usually happens to a filament lamp’s resistance as the filament gets hotter?", "c": "It increases.", "w": ["It becomes zero.", "It stays perfectly constant.", "It becomes negative."], "e": "Higher temperature increases lattice vibrations, increasing resistance."}], "Unit 13": [{"q": "Where should an ammeter be connected to measure the current through a lamp?", "c": "In series with the lamp.", "w": ["In parallel across the lamp.", "Directly across the supply with no component.", "Across the fuse only."], "e": "An ammeter measures the current flowing through a component, so it is connected in series."}, {"q": "Two lamps are connected in parallel across a battery. What is true about the potential difference across each lamp?", "c": "Each has the full supply potential difference.", "w": ["They always share the voltage equally.", "The first lamp gets all the voltage.", "The voltage across each is zero."], "e": "Parallel branches are connected across the same two points."}, {"q": "An LDR is used in a light sensor. What happens to its resistance as light intensity increases?", "c": "It decreases.", "w": ["It increases.", "It stays constant.", "It becomes infinite."], "e": "An LDR has lower resistance in brighter light."}, {"q": "Why is the metal case of a Class I appliance earthed?", "c": "A fault current can flow safely to Earth and operate a protective device.", "w": ["To make the case live.", "To increase normal current.", "To remove the fuse."], "e": "Earthing provides a low-resistance path for fault current."}], "Unit 14": [{"q": "A current-carrying wire is placed perpendicular to a magnetic field. What happens?", "c": "It experiences a force.", "w": ["Its resistance becomes zero.", "The magnetic field disappears.", "It becomes electrically neutral."], "e": "A current in a magnetic field experiences the motor effect."}, {"q": "A magnet is moved faster into a coil. What happens to the induced emf?", "c": "It increases.", "w": ["It decreases to zero.", "It stays unchanged at all speeds.", "It becomes independent of the coil."], "e": "A faster change of magnetic flux produces a larger induced emf."}, {"q": "A transformer has 1200 primary turns and 300 secondary turns. The primary voltage is 240 V. What is the secondary voltage?", "c": "60 V", "w": ["960 V", "240 V", "15 V"], "e": "Vs/Vp = Ns/Np."}, {"q": "Why is electricity transmitted at high voltage?", "c": "For the same power, current is lower, reducing I²R heating losses.", "w": ["It makes cable resistance zero.", "It increases current.", "It removes the need for transformers."], "e": "Lower current greatly reduces heating losses in transmission cables."}], "Unit 15": [{"q": "A detector measures 70 counts/min with a source present and background is 15 counts/min. What is the corrected count rate?", "c": "55 counts/min", "w": ["85 counts/min", "70 counts/min", "15 counts/min"], "e": "Corrected count = measured count − background count."}, {"q": "Which radiation is most strongly ionising and least penetrating?", "c": "Alpha radiation.", "w": ["Beta radiation.", "Gamma radiation.", "Microwaves."], "e": "Alpha is strongly ionising but has low penetration."}, {"q": "A sample has activity 800 counts/min and half-life 2 h. What is its activity after 6 h?", "c": "100 counts/min", "w": ["200 counts/min", "400 counts/min", "50 counts/min"], "e": "Six hours is three half-lives: 800→400→200→100."}, {"q": "In Rutherford scattering, most alpha particles passed straight through thin foil. What did this show?", "c": "Most of the atom is empty space.", "w": ["Atoms are completely solid.", "Positive charge is spread uniformly.", "Electrons fill nearly all the atom’s volume with matter."], "e": "Most particles were undeflected, implying mostly empty space."}], "Unit 16": [{"q": "What causes day and night on Earth?", "c": "Earth rotates on its axis.", "w": ["Earth orbits the Sun once per day.", "The Moon blocks the Sun each night.", "The Sun orbits Earth each day."], "e": "Earth’s rotation causes different regions to face toward or away from the Sun."}, {"q": "Which force keeps planets in orbit around the Sun?", "c": "Gravity.", "w": ["Electrostatic repulsion.", "Friction.", "Magnetism alone."], "e": "Solar gravity provides the centripetal force."}, {"q": "A distant galaxy shows red-shift. What does this indicate?", "c": "The galaxy is moving away from us.", "w": ["It is moving toward us.", "It is stationary.", "Light travels faster than c."], "e": "Red-shift means observed wavelengths are stretched, indicating recession."}, {"q": "Which observation supports the idea that the Universe began in a hot, dense state?", "c": "Cosmic microwave background radiation.", "w": ["Earth’s magnetic field.", "Ocean tides.", "The phases of the Moon."], "e": "The cosmic microwave background is relic radiation from the early Universe."}]};
+const topicBanks={};
+let API_BASE = 'https://YOUR-WORKER.your-subdomain.workers.dev';
+let AUTH_TOKEN = localStorage.getItem('milad_lab_token') || '';
+let currentTopic="", currentUnit="", totalMarks=0, earnedMarks=0;
+function shuffled(a){return [...a].sort(()=>Math.random()-.5)}
+
+async function api(path, options={}){
+  const headers={...(options.headers||{}),'Content-Type':'application/json'};
+  if(AUTH_TOKEN) headers.Authorization='Bearer '+AUTH_TOKEN;
+  const r=await fetch(API_BASE+path,{...options,headers});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error||`Request failed (${r.status})`);
+  return data;
+}
+async function activateSecureLab(){
+  const license=prompt('Enter your Mr. Milad Physics Lab license key:');
+  if(!license)return;
+  try{
+    const data=await api('/activate',{method:'POST',body:JSON.stringify({license})});
+    AUTH_TOKEN=data.token; localStorage.setItem('milad_lab_token',AUTH_TOKEN);
+    toast('✅ License activated');
+    speak('License activated. Welcome to Mr. Milad Physics Lab.');
+  }catch(e){toast('❌ License activation failed'); alert(e.message);}
+}
+async function loadSecureTopic(topic,unitName){
+  const data=await api('/topic?name='+encodeURIComponent(topic));
+  topicBanks[topic]=data.questions;
+  startEssentialTopic(topic,unitName);
+}
+async function startEssentialTopic(topic,unitName){
+ let bank=topicBanks[topic]||[];
+ if(!bank.length){ try{ const data=await api(`/topic?name=${encodeURIComponent(topic)}`); topicBanks[topic]=data.questions; bank=data.questions; }catch(e){ alert(`Secure question server unavailable: ${e.message}`); return; } }
+ if(!bank.length){toast('This topic has no verified question bank yet.');return;}
+ qs=bank.map(x=>({q:x.q,a:[...x.options],c:x.answer,e:x.e,marks:x.marks,formula:x.formula||'',type:'tutor'}));
+ qi=0;score=0;answered=false;totalMarks=qs.reduce((s,x)=>s+(x.marks||1),0);earnedMarks=0;
+ currentTopic=topic; currentUnit=unitName;
+ document.getElementById('qtitle').textContent=`🎯 ${topic} — IGCSE/O Level Tutor Practice`;
+ document.getElementById('tutorMeta').textContent=`${qs.length} questions in this topic • Answers stay hidden until CHECK ANSWER.`;
+ document.getElementById('tutorMeta').textContent=`${unitName} • ${bank.length} tutor questions • Answers are hidden until you press CHECK ANSWER.`;
+ document.getElementById('lab').scrollIntoView({behavior:'smooth',block:'start'});
+ renderTutor();
+ toast(`Started: ${topic}`);
+ setTimeout(()=>{if(qs[0])speak(`Question one. ${qs[0].q}`)},300);
+}
+function renderEssentialLibrary(){
+ const root=document.getElementById('unitLibrary'); if(!root)return;
+ root.innerHTML=essentialPhysicsUnits.map(u=>`<div class="unitCard"><h3>${u.unit} — ${u.title}</h3>${u.topics.map(t=>`<button class="topicBtn" onclick='startEssentialTopic(${JSON.stringify(t)},${JSON.stringify(u.unit)})'>${t}</button>`).join('')}</div>`).join('');
+}
+
+const c=document.getElementById('graph'),ctx=c.getContext('2d');let graphType='steady';
+function setGraph(type){graphType=type;drawGraph();let msg={steady:"Straight upward line → constant gradient → steady speed.",stop:"Horizontal line → zero gradient → stationary.",accel:"Curve getting steeper → increasing gradient → accelerating."};graphExplain.textContent=msg[type];playTone('next')}
+function drawGraph(){let W=c.width,H=c.height,p={l:70,r:28,t:25,b:58};ctx.clearRect(0,0,W,H);
+ctx.fillStyle='#040c17';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#29415b';ctx.lineWidth=1;
+for(let x=0;x<=6;x++){let X=p.l+x*(W-p.l-p.r)/6;ctx.beginPath();ctx.moveTo(X,p.t);ctx.lineTo(X,H-p.b);ctx.stroke()}
+for(let y=0;y<=6;y++){let Y=H-p.b-y*(H-p.t-p.b)/6;ctx.beginPath();ctx.moveTo(p.l,Y);ctx.lineTo(W-p.r,Y);ctx.stroke()}
+ctx.strokeStyle='#e1efff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.l,H-p.b);ctx.lineTo(W-p.r+5,H-p.b);ctx.moveTo(p.l,H-p.b);ctx.lineTo(p.l,p.t-5);ctx.stroke();
+ctx.fillStyle='#a9bdd3';ctx.font='15px Segoe UI';ctx.fillText('Time (s)',W/2-28,H-17);ctx.save();ctx.translate(19,H/2+30);ctx.rotate(-Math.PI/2);ctx.fillText('Distance (m)',0,0);ctx.restore();
+let col=graphType==='steady'?'#55dcff':graphType==='stop'?'#ffc36b':'#a78bfa';ctx.strokeStyle=col;ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();
+for(let t=0;t<=1;t+=.008){let x=p.l+t*(W-p.l-p.r),y;if(graphType==='steady')y=H-p.b-t*(H-p.t-p.b)*.8;else if(graphType==='stop')y=H-p.b-(H-p.t-p.b)*.48;else y=H-p.b-Math.pow(t,2.25)*(H-p.t-p.b)*.86;if(t===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();
+if(graphType==='steady'){ctx.fillStyle='#55dcff';ctx.font='bold 16px Segoe UI';ctx.fillText('steady speed',W-175,65)}if(graphType==='stop'){ctx.fillStyle='#ffc36b';ctx.font='bold 16px Segoe UI';ctx.fillText('stationary',W-150,65)}if(graphType==='accel'){ctx.fillStyle='#a78bfa';ctx.font='bold 16px Segoe UI';ctx.fillText('accelerating',W-160,65)}
+}
+speechSynthesis&&speechSynthesis.addEventListener&&speechSynthesis.addEventListener('voiceschanged',()=>{});
+drawGraph();render();renderEssentialLibrary();setTimeout(autoWelcome,500);
+</script>
+
+<script id="owner-guard">
+(function(){
+const EXPECTED_DB_SHA256='f7df29d3999bec1defc59d609b1c9ce3e0628d054495e46e042d8c7db168aaee';
+async function digest(text){
+  if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)); return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+  return '';
+}
+(async()=>{try{const actual=await digest(JSON.stringify(topicBanks)); if(actual && actual!==EXPECTED_DB_SHA256){const w=document.getElementById('tamperWarn'); if(w)w.style.display='block'; document.title='UNAUTHORIZED COPY';}}catch(e){}})();
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('dragstart',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&['u','s','p','c'].includes(e.key.toLowerCase())) e.preventDefault(); if(e.key==='F12') e.preventDefault();});
+})();
+</script>
+</body>
+</html>
