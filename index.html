@@ -57,7 +57,7 @@ body{user-select:none;-webkit-user-select:none} .ownerStamp{position:fixed;right
 <h1>Welcome to <em>Mr. Milad</em> Physics Lab</h1>
 <p class="lead">A visual, interactive Physics Lab where you can <b>see</b> the physics, <b>hear</b> the lesson, and <b>test</b> your understanding. Upload a lesson, explore the Physics, and build a quiz from your own PDF.</p>
 <div class="actions">
-<button onclick="startLab()">🚀 Enter the Lab</button>
+<button onclick="enterSecureLab()">🔐 Activate & Enter Lab</button>
 <button class="secondary" onclick="playIntro()">🔊 Play Voice Introduction</button>
 <button class="secondary" onclick="toggleSound()">🔉 Sound Effects: <span id="soundState">ON</span></button>
 </div>
@@ -145,7 +145,28 @@ body{user-select:none;-webkit-user-select:none} .ownerStamp{position:fixed;right
     <button onclick="startIntroFromOverlay()">▶ Start Lab</button>
   </div>
 </div>
+async function enterSecureLab(){
+  const existing = localStorage.getItem('milad_lab_token');
 
+  if(existing){
+    AUTH_TOKEN = existing;
+    try{
+      await api('/topics');
+      toast('✅ Lab already activated');
+      startLab(true);
+      return;
+    }catch(e){
+      localStorage.removeItem('milad_lab_token');
+      AUTH_TOKEN = '';
+    }
+  }
+
+  await activateSecureLab();
+
+  if(AUTH_TOKEN){
+    startLab(true);
+  }
+}
 <script>
 let soundOn=true,audioCtx=null,voiceTimer=null;
 function audio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}}
