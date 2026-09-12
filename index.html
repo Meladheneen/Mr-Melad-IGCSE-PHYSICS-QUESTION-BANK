@@ -282,19 +282,34 @@ let qs=[
 ];
 let qi=0,selectedOption=-1,answered=false,currentTopic="Distance–Time Graphs",currentUnit="Unit 1";
 
+function normalizeQuestion(raw){
+  const x={...raw};
+  x.a=Array.isArray(raw.a)?raw.a:(Array.isArray(raw.options)?raw.options:[]);
+  let correctIndex=Number.isInteger(raw.c)?raw.c:-1;
+  if(correctIndex<0 && typeof raw.answer==='string') correctIndex=x.a.findIndex(v=>String(v).trim()===raw.answer.trim());
+  if(correctIndex<0 && typeof raw.answer==='number') correctIndex=raw.answer;
+  if(correctIndex<0 && typeof raw.c==='string') correctIndex=x.a.findIndex(v=>String(v).trim()===raw.c.trim());
+  x.c=correctIndex>=0 && correctIndex<x.a.length ? x.a[correctIndex] : (typeof raw.answer==='string'?raw.answer:'');
+  x.e=raw.e||raw.explanation||'';
+  x.marks=Number(raw.marks)||1;
+  x.formula=raw.formula||'';
+  return x;
+}
+
 function renderTutor(){
- answered=false; selectedOption=-1; const x=qs[qi];
+ answered=false; selectedOption=-1; const x=normalizeQuestion(qs[qi]); qs[qi]=x;
  document.getElementById('qnum').textContent=`Question ${qi+1} / ${qs.length}`;
  document.getElementById('score').textContent=`Score: ${earnedMarks} / ${totalMarks}`;
  document.getElementById('bar').style.width=`${(qi/qs.length)*100}%`;
- document.getElementById('question').textContent=x.q;
- const mm=document.getElementById('markMeta'); if(mm)mm.textContent=`${x.marks||1} mark${(x.marks||1)>1?'s':''} • Choose your answer, then check it.`;
+ document.getElementById('question').textContent=x.q||'';
+ const mm=document.getElementById('markMeta'); if(mm)mm.textContent=`${x.marks} mark${x.marks>1?'s':''} • Choose your answer, then check it.`;
  document.getElementById('feedback').innerHTML=''; document.getElementById('next').style.display='none';
  const opts=document.getElementById('options'); opts.innerHTML='';
+ if(!x.a.length){opts.innerHTML='<div class="feedback">⚠️ No answer options were returned for this question.</div>';}
  x.a.forEach((t,n)=>{let b=document.createElement('button');b.className='option';b.type='button';b.textContent=String.fromCharCode(65+n)+'. '+t;b.onclick=()=>selectTutor(n,b);opts.appendChild(b)});
- const check=document.getElementById('checkAnswer'); if(check){check.style.display='inline-block';check.disabled=true;}
- const formula=document.getElementById('formulaBox'); if(formula){formula.textContent='';formula.style.display='none';}
- const selected=document.getElementById('selectedAnswer'); if(selected)selected.textContent='Select an answer, then press CHECK ANSWER.';
+ const check=document.getElementById('checkAnswer'); if(check){check.style.display='inline-block';check.disabled=!x.a.length;}
+ const formula=document.getElementById('formulaBox'); if(formula){formula.textContent=x.formula||'';formula.style.display=x.formula?'block':'none';}
+ const selected=document.getElementById('selectedAnswer'); if(selected)selected.textContent=x.a.length?'Select an answer, then press CHECK ANSWER.':'No answer options available.';
 }
 
 function selectTutor(n,b){
@@ -308,7 +323,7 @@ function selectTutor(n,b){
 
 function checkTutorAnswer(){
  if(answered||selectedOption<0)return;
- answered=true; const x=qs[qi]; 
+ answered=true; const x=normalizeQuestion(qs[qi]); qs[qi]=x; 
  const correctText = x.c;
  const pickedText = x.a[selectedOption];
  document.querySelectorAll('.option').forEach((el,k)=>{
