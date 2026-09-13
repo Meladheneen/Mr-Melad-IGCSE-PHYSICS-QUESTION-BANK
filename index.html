@@ -118,6 +118,7 @@ body{user-select:none;-webkit-user-select:none} .ownerStamp{position:fixed;right
 <div class="actions"><button class="small secondary" id="generateBtn" onclick="generateLessonFromPDF()" disabled>✨ Generate Lesson</button><button class="small" id="generateQuizBtn" onclick="generateQuizFromPDF()" disabled>🧠 Generate Quiz from PDF</button><button class="small secondary" id="ocrHint" onclick="speak('I will first read the PDF. If it is scanned, I will use OCR to read the page images. Then I will build a quiz from the detected Physics topic and evidence in your PDF.')">🔊 How PDF Quiz Works</button></div>
 <div id="pdfStatus" class="fileName"></div>
 <div class="lessonResult" id="lessonResult"></div>
+<div id="pdfQuizResult" class="lessonResult" style="display:none"></div>
 </div>
 
 <div class="panel section">
@@ -439,80 +440,140 @@ async function extractPDFText(){
   return pdfText;
 }
 
-function cleanSentence(s){return s.replace(/\s+/g,' ').trim().replace(/^[-•●▪]+/,'').trim();}
+function cleanSentence(s){
+  return String(s||'').replace(/\s+/g,' ').replace(/[•●▪]+/g,' ').trim();
+}
 function lessonSentences(text){
-  return text.split(/(?<=[.!?])\s+|\n+/).map(cleanSentence).filter(s=>s.length>=45&&s.length<=320&&!/^(page|figure|table)\s*\d*$/i.test(s)).slice(0,80);
+  const raw=String(text||'').replace(/\r/g,'\n');
+  const parts=raw.split(/(?<=[.!?])\s+|\n+/);
+  return parts.map(cleanSentence)
+    .filter(s=>s.length>=25 && s.length<=500 &&
+      !/^(page|figure|table|contents|chapter|unit)\s*[\d\-:]*$/i.test(s))
+    .slice(0,160);
 }
 function physicsKeywords(text){
-  const terms=['speed','velocity','acceleration','force','mass','weight','density','pressure','energy','power','work','momentum','wave','frequency','wavelength','amplitude','reflection','refraction','current','voltage','resistance','charge','magnetic','electromagnetic','radioactive','half-life','atom','nucleus','gravity','orbit','temperature','conduction','convection','radiation'];
+  const terms=['speed','velocity','acceleration','force','mass','weight','density','pressure','energy','power','work','momentum','wave','frequency','wavelength','amplitude','reflection','refraction','current','voltage','resistance','charge','magnetic','electromagnetic','radioactive','half-life','atom','nucleus','gravity','orbit','temperature','conduction','convection','radiation','circuit','transformer','lens','sound','thermal'];
   return terms.filter(t=>new RegExp('\\b'+t+'\\b','i').test(text));
 }
 function makeDistractors(correct,pool){
-  const c=cleanSentence(correct); const candidates=pool.filter(x=>x!==correct).sort((a,b)=>a.length-b.length);
-  const out=[]; for(const x of candidates){if(!out.includes(x)&&x.length>25){out.push(x);if(out.length===3)break;}}
-  while(out.length<3)out.push('This statement is not supported by the uploaded lesson.');
+  const c=cleanSentence(correct);
+  const candidates=pool.filter(x=>x!==correct).sort((a,b)=>Math.abs(a.length-c.length)-Math.abs(b.length-c.length));
+  const out=[];
+  for(const x of candidates){
+    if(!out.includes(x) && x.length>=20){out.push(x);if(out.length===3)break;}
+  }
+  while(out.length<3) out.push('This statement is not supported by the uploaded material.');
   return out;
 }
-function buildPDFQuiz(text){
-  const sentences=lessonSentences(text); const qsOut=[]; const used=new Set();
-  const keywords=physicsKeywords(text);
-  for(const s of sentences){
-    if(qsOut.length>=10)break;
-    const m=s.match(/^(?:the )?([A-Za-z][A-Za-z -]{2,35})\s+(?:is|are|means|refers to|can be defined as)\s+(.{20,240})$/i);
+function makeShortQuestion(sentence,index){
+  const s=cleanSentence(sentence);
+  const patterns=[
+    {re:/^(.{2,80}?)\s+(?:is|are|means|refers to|can be defined as)\s+(.{15,450})$/i},
+    {re:/^(.{2,80}?)\s*:\s*(.{15,450})$/i}
+  ];
+  for(const p of patterns){
+    const m=s.match(p.re);
     if(m){
-      const term=m[1].trim(); const correct=m[2].trim().replace(/[.]$/,'');
-      if(correct.length<220 && !used.has(term.toLowerCase())){
-        const opts=makeDistractors(s,sentences).map(x=>x===s?'Another description from the lesson.':x);
-        qsOut.push({q:`According to the uploaded lesson, what does ${term} mean?`,a:[correct,...opts],c:correct,e:`The uploaded lesson states that ${term} ${m[0].split(/\s+/).slice(1).join(' ')}`,marks:1});
-        used.add(term.toLowerCase());
+      const term=m[1].replace(/^(the|a|an)\s+/i,'').trim();
+      const answer=m[2].replace(/[.]$/,'').trim();
+      if(answer.length>=15 && answer.length<=450){
+        return {q:`According to the uploaded material, what is ${term}?`,a:[answer,...makeDistractors(answer, currentPDFPool)],c:answer,e:`The uploaded PDF states: ${s}`,marks:1};
       }
     }
   }
-  // Evidence-based comprehension questions fill the remaining places.
-  for(const s of sentences){
-    if(qsOut.length>=10)break;
-    if(s.length<55||used.has(s))continue;
-    const opts=[s,...makeDistractors(s,sentences)];
-    qsOut.push({q:`Which statement is supported by the uploaded Physics lesson?`,a:opts,c:s,e:`This statement was taken from the readable content of the uploaded lesson.`,marks:1});
-    used.add(s);
-  }
-  // If the lesson is short, repeat only with a different question wording rather than fail.
-  let i=0; while(qsOut.length<10 && sentences.length){
-    const s=sentences[i++%sentences.length]; const opts=[s,...makeDistractors(s,sentences)];
-    qsOut.push({q:`Which statement matches the uploaded lesson content?`,a:opts,c:s,e:'The correct choice is supported by the text extracted from your PDF.',marks:1});
-  }
-  return qsOut;
+  return {
+    q:`Which statement is supported by the uploaded Physics material?`,
+    a:[s,...makeDistractors(s,currentPDFPool)],
+    c:s,
+    e:`This answer is based directly on readable content extracted from ${pdfFile?.name||'the uploaded PDF'}.`,
+    marks:1
+  };
 }
-
-async function generateLessonFromPDF(){
-  if(!pdfFile){setPDFStatus('⚠️ Please choose a PDF first.','err');return;}
-  const btn=document.getElementById('generateBtn'); btn.disabled=true;
-  try{
-    const text=await extractPDFText();
-    const sentences=lessonSentences(text); const keys=physicsKeywords(text);
-    pdfLesson={title:pdfFile.name.replace(/\.pdf$/i,''),sentences,keys};
-    const summary=sentences.slice(0,6).map(s=>`<li>${escapeHTML(s)}</li>`).join('');
-    document.getElementById('lessonResult').style.display='block';
-    document.getElementById('lessonResult').innerHTML=`<div class="mini"><h4>✨ Uploaded Physics Lesson</h4><p><b>${escapeHTML(pdfLesson.title)}</b></p><p><b>Physics concepts detected:</b> ${escapeHTML(keys.join(', ')||'Physics concepts')}</p><p><b>Extracted lesson points:</b></p><ul>${summary||'<li>Text extracted successfully.</li>'}</ul></div>`;
-    setPDFStatus(`✅ PDF read successfully: ${text.length.toLocaleString()} characters extracted.`,'ok');
-    toast('Lesson generated successfully');
-  }catch(e){console.error(e);setPDFStatus('❌ '+e.message,'err');alert('PDF Lesson Generator\n\n'+e.message);}
-  finally{btn.disabled=false;}
+let currentPDFPool=[];
+function buildPDFQuiz(text){
+  const sentences=lessonSentences(text);
+  currentPDFPool=sentences;
+  const out=[];
+  const used=new Set();
+  // Prefer definition/concept statements first.
+  for(let i=0;i<sentences.length && out.length<10;i++){
+    const s=sentences[i];
+    const key=s.toLowerCase();
+    if(used.has(key)) continue;
+    const q=makeShortQuestion(s,i);
+    out.push(q); used.add(key);
+  }
+  // Guaranteed fallback: split longer text into meaningful chunks.
+  if(out.length<4){
+    const words=String(text||'').split(/\s+/).filter(Boolean);
+    const chunks=[];
+    for(let i=0;i<words.length;i+=55){
+      const chunk=cleanSentence(words.slice(i,i+55).join(' '));
+      if(chunk.length>=40) chunks.push(chunk);
+    }
+    currentPDFPool=chunks;
+    for(const c of chunks){
+      if(out.length>=10) break;
+      out.push({
+        q:'Which statement is supported by the uploaded material?',
+        a:[c,...makeDistractors(c,chunks)],
+        c,
+        e:'This statement comes from the text extracted from the uploaded PDF.',
+        marks:1
+      });
+    }
+  }
+  return out.slice(0,10);
 }
-
+function renderPDFQuizPreview(){
+  const box=document.getElementById('pdfQuizResult');
+  if(!box)return;
+  box.style.display='block';
+  box.innerHTML=`<div class="mini"><h4>🧠 Quiz Generated from Your PDF</h4>
+    <p>${qs.length} questions are ready. The quiz is now displayed in the Tutor area below. Answer choices are randomized.</p>
+    <button type="button" class="small" onclick="document.getElementById('lab').scrollIntoView({behavior:'smooth',block:'start'})">▶ Start PDF Quiz</button>
+  </div>`;
+}
 async function generateQuizFromPDF(){
   if(!pdfFile){setPDFStatus('⚠️ Please choose a PDF first.','err');return;}
   const btn=document.getElementById('generateQuizBtn'); btn.disabled=true;
   try{
-    if(!pdfText) await extractPDFText();
-    pdfQuestions=buildPDFQuiz(pdfText);
-    if(pdfQuestions.length<4)throw new Error('The PDF did not contain enough readable Physics content to build a reliable quiz.');
-    qs=pdfQuestions.map(normalizeQuestion); currentTopic='Uploaded PDF Lesson'; currentUnit='PDF Tutor'; qi=0; earnedMarks=0; totalMarks=qs.reduce((sum,item)=>sum+(item.marks||1),0);
+    setPDFStatus('📖 Reading your PDF and building questions…');
+    const text=pdfText || await extractPDFText();
+    pdfText=text;
+    if(!text || text.trim().length<30) throw new Error('The PDF contains too little readable text. Try a clearer/text-based PDF or a scanned PDF with readable pages.');
+    pdfQuestions=buildPDFQuiz(text);
+    if(pdfQuestions.length<4) throw new Error('I could read the PDF, but it did not contain enough usable material to make a quiz.');
+    qs=pdfQuestions.map(normalizeQuestion);
+    currentTopic='Uploaded PDF Lesson'; currentUnit='PDF Tutor'; qi=0; earnedMarks=0;
+    totalMarks=qs.reduce((sum,item)=>sum+(Number(item.marks)||1),0);
     document.getElementById('qtitle').textContent='🧠 Quiz from Uploaded Physics PDF';
-    document.getElementById('tutorMeta').textContent=`${pdfFile.name} • ${qs.length} evidence-based questions`;
+    document.getElementById('tutorMeta').textContent=`${pdfFile.name} • ${qs.length} questions generated from the uploaded material`;
+    renderTutor();
+    renderPDFQuizPreview();
     document.getElementById('lab').scrollIntoView({behavior:'smooth',block:'start'});
-    renderTutor(); setPDFStatus(`✅ Quiz generated: ${qs.length} questions. Answer choices are randomized.`,'ok'); toast('PDF Quiz Ready');
-  }catch(e){console.error(e);setPDFStatus('❌ '+e.message,'err');alert('PDF Quiz Generator\n\n'+e.message);}
+    setPDFStatus(`✅ Quiz generated successfully: ${qs.length} questions. Scroll to the Tutor area to start.`,'ok');
+    toast('🧠 PDF Quiz Ready');
+  }catch(e){
+    console.error('PDF quiz generation error:',e);
+    setPDFStatus('❌ '+e.message,'err');
+    alert('PDF Quiz Generator\\n\\n'+e.message);
+  }finally{btn.disabled=false;}
+}
+async function generateLessonFromPDF(){
+  if(!pdfFile){setPDFStatus('⚠️ Please choose a PDF first.','err');return;}
+  const btn=document.getElementById('generateBtn'); btn.disabled=true;
+  try{
+    const text=pdfText || await extractPDFText();
+    pdfText=text;
+    const sentences=lessonSentences(text), keys=physicsKeywords(text);
+    pdfLesson={title:pdfFile.name.replace(/\.pdf$/i,''),sentences,keys};
+    const summary=sentences.slice(0,8).map(s=>`<li>${escapeHTML(s)}</li>`).join('');
+    document.getElementById('lessonResult').style.display='block';
+    document.getElementById('lessonResult').innerHTML=`<div class="mini"><h4>✨ Uploaded Physics Lesson</h4><p><b>${escapeHTML(pdfLesson.title)}</b></p><p><b>Physics concepts detected:</b> ${escapeHTML(keys.join(', ')||'General Physics content')}</p><p><b>Extracted lesson points:</b></p><ul>${summary||'<li>Text extracted successfully.</li>'}</ul></div>`;
+    setPDFStatus(`✅ PDF read successfully: ${text.length.toLocaleString()} characters extracted.`,'ok');
+    toast('Lesson generated successfully');
+  }catch(e){console.error(e);setPDFStatus('❌ '+e.message,'err');alert('PDF Lesson Generator\\n\\n'+e.message);}
   finally{btn.disabled=false;}
 }
 
