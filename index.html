@@ -424,7 +424,7 @@ async function extractPDFText(){
     const content=await page.getTextContent();
     const pageText=content.items.map(i=>i.str||'').join(' ').replace(/\s+/g,' ').trim();
     text += (pageText?'\n'+pageText:'');
-    if(!pageText && window.Tesseract){
+    if(pageText.length<35 && window.Tesseract){
       try{
         const viewport=page.getViewport({scale:1.35});
         const canvas=document.createElement('canvas'); canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
@@ -445,83 +445,129 @@ function cleanSentence(s){
 }
 function lessonSentences(text){
   const raw=String(text||'').replace(/\r/g,'\n');
-  const parts=raw.split(/(?<=[.!?])\s+|\n+/);
-  return parts.map(cleanSentence)
-    .filter(s=>s.length>=25 && s.length<=500 &&
-      !/^(page|figure|table|contents|chapter|unit)\s*[\d\-:]*$/i.test(s))
-    .slice(0,160);
+  return raw.split(/(?<=[.!?])\s+|\n+/).map(cleanSentence)
+    .filter(s=>s.length>=20 && s.length<=500)
+    .filter(s=>!/^((page|figure|table|contents|chapter|unit|lesson|exercise|question|answer)\s*[\d\-:.)]*)$/i.test(s))
+    .filter(s=>!/^\d+$/.test(s)).slice(0,220);
 }
-function physicsKeywords(text){
-  const terms=['speed','velocity','acceleration','force','mass','weight','density','pressure','energy','power','work','momentum','wave','frequency','wavelength','amplitude','reflection','refraction','current','voltage','resistance','charge','magnetic','electromagnetic','radioactive','half-life','atom','nucleus','gravity','orbit','temperature','conduction','convection','radiation','circuit','transformer','lens','sound','thermal'];
-  return terms.filter(t=>new RegExp('\\b'+t+'\\b','i').test(text));
+function pdfTermFromSentence(s){
+  const m=cleanSentence(s).match(/^(.{2,90}?)\s+(?:is|are|means|refers to|can be defined as|is defined as)\s+(.{12,420})$/i);
+  if(!m)return null;
+  let term=m[1].replace(/^(the|a|an)\s+/i,'').trim();
+  term=term.replace(/^(definition of|meaning of)\s+/i,'').trim();
+  if(term.length<2 || term.length>75 || /^(when|if|because|this|it|they|there|these|those)\b/i.test(term))return null;
+  return {term,definition:m[2].replace(/[.;]$/,'').trim(),source:s};
 }
-function makeDistractors(correct,pool){
-  const c=cleanSentence(correct);
-  const candidates=pool.filter(x=>x!==correct).sort((a,b)=>Math.abs(a.length-c.length)-Math.abs(b.length-c.length));
-  const out=[];
-  for(const x of candidates){
-    if(!out.includes(x) && x.length>=20){out.push(x);if(out.length===3)break;}
-  }
-  while(out.length<3) out.push('This statement is not supported by the uploaded material.');
+function pdfConcepts(text){
+  const list=[
+    ['balanced forces','balanced forces'],['unbalanced forces','unbalanced forces'],['resultant force','resultant force'],['speed','speed'],['velocity','velocity'],['acceleration','acceleration'],['free fall','free fall'],['mass','mass'],['weight','weight'],['density','density'],['momentum','momentum'],['moment','moment'],['centre of gravity','centre of gravity'],['pressure','pressure'],['work','work'],['power','power'],['energy','energy'],['efficiency','efficiency'],['kinetic energy','kinetic energy'],['gravitational potential energy','gravitational potential energy'],['temperature','temperature'],['thermal conduction','thermal conduction'],['convection','convection'],['thermal radiation','thermal radiation'],['wavelength','wavelength'],['frequency','frequency'],['amplitude','amplitude'],['reflection','reflection'],['refraction','refraction'],['current','electric current'],['voltage','potential difference'],['resistance','resistance'],['charge','electric charge'],['magnetic field','magnetic field'],['electromagnetic induction','electromagnetic induction'],['radioactive decay','radioactive decay'],['half-life','half-life'],['alpha radiation','alpha radiation'],['beta radiation','beta radiation'],['gamma radiation','gamma radiation'],['transformer','transformer'],['fission','nuclear fission'],['fusion','nuclear fusion'],['orbit','orbit']
+  ];
+  const low=String(text||'').toLowerCase();
+  return list.filter(x=>low.includes(x[0])).map(x=>x[1]);
+}
+function pdfNumbers(s){
+  return (String(s).match(/-?\d+(?:\.\d+)?(?:\s*[×x]\s*10\^?[-+]?\d+)?/g)||[]).map(x=>x.trim());
+}
+function pdfUnit(s){
+  const m=String(s).match(/(?:m\/s\^?2|m\/s|kg\/m\^?3|g\/cm\^?3|N|J|W|Pa|Hz|V|A|Ω|ohm|C|kg|g|m|cm|s|min|°C|K|W\/kg|N\s*m)/i);
+  return m?m[0]:'unit';
+}
+function uniqueOptions(arr){
+  const out=[]; const seen=new Set();
+  for(const v of arr){const x=cleanSentence(v); const k=x.toLowerCase(); if(x && !seen.has(k)){seen.add(k);out.push(x)}}
   return out;
 }
-function makeShortQuestion(sentence,index){
-  const s=cleanSentence(sentence);
-  const patterns=[
-    {re:/^(.{2,80}?)\s+(?:is|are|means|refers to|can be defined as)\s+(.{15,450})$/i},
-    {re:/^(.{2,80}?)\s*:\s*(.{15,450})$/i}
-  ];
-  for(const p of patterns){
-    const m=s.match(p.re);
-    if(m){
-      const term=m[1].replace(/^(the|a|an)\s+/i,'').trim();
-      const answer=m[2].replace(/[.]$/,'').trim();
-      if(answer.length>=15 && answer.length<=450){
-        return {q:`According to the uploaded material, what is ${term}?`,a:[answer,...makeDistractors(answer, currentPDFPool)],c:answer,e:`The uploaded PDF states: ${s}`,marks:1};
-      }
-    }
-  }
-  return {
-    q:`Which statement is supported by the uploaded Physics material?`,
-    a:[s,...makeDistractors(s,currentPDFPool)],
-    c:s,
-    e:`This answer is based directly on readable content extracted from ${pdfFile?.name||'the uploaded PDF'}.`,
-    marks:1
-  };
-}
-let currentPDFPool=[];
-function buildPDFQuiz(text){
-  const sentences=lessonSentences(text);
-  currentPDFPool=sentences;
+function definitionDistractors(term,correct,defs){
+  const others=defs.filter(d=>d.term.toLowerCase()!==term.toLowerCase());
   const out=[];
-  const used=new Set();
-  // Prefer definition/concept statements first.
-  for(let i=0;i<sentences.length && out.length<10;i++){
-    const s=sentences[i];
-    const key=s.toLowerCase();
-    if(used.has(key)) continue;
-    const q=makeShortQuestion(s,i);
-    out.push(q); used.add(key);
+  for(const d of others.sort((a,b)=>Math.abs(a.definition.length-correct.length)-Math.abs(b.definition.length-correct.length))){
+    if(d.definition.length>=8 && d.definition.length<=180) out.push(d.definition);
+    if(out.length===3)break;
   }
-  // Guaranteed fallback: split longer text into meaningful chunks.
-  if(out.length<4){
-    const words=String(text||'').split(/\s+/).filter(Boolean);
-    const chunks=[];
-    for(let i=0;i<words.length;i+=55){
-      const chunk=cleanSentence(words.slice(i,i+55).join(' '));
-      if(chunk.length>=40) chunks.push(chunk);
+  const generic=[
+    'The amount of space occupied by the substance.',
+    'The rate at which the object changes its position.',
+    'The force acting on the object due to gravity.',
+    'The amount of energy transferred each second.',
+    'The distance travelled divided by the mass of the object.'
+  ];
+  return uniqueOptions([...out,...generic]).filter(x=>x.toLowerCase()!==correct.toLowerCase()).slice(0,3);
+}
+function conceptQuestion(concept,text,sentences,defs){
+  const low=String(text).toLowerCase();
+  const facts=sentences.filter(s=>s.toLowerCase().includes(concept.toLowerCase()));
+  const f=facts.find(s=>s.length>30) || '';
+  if(!f)return null;
+  const templates={
+    'balanced forces':()=>({q:'What is the effect of balanced forces on an object?',a:['The resultant force is zero, so its motion does not change','The object must accelerate','The object must move in a circle','The object must have zero mass'],c:0,e:'Balanced forces have a zero resultant force, so there is no acceleration.',marks:1}),
+    'unbalanced forces':()=>({q:'Which statement correctly describes unbalanced forces?',a:['The resultant force is not zero and the object accelerates','The resultant force is always zero','The object must remain stationary','The object has no mass'],c:0,e:'An unbalanced force produces a non-zero resultant force and therefore acceleration.',marks:1}),
+    'resultant force':()=>({q:'What is meant by the resultant force on an object?',a:['The single force that has the same effect as all the forces acting together','The largest force acting on the object','The force due only to gravity','The force acting for the longest time'],c:0,e:'The resultant force is the overall effect of all forces acting on the object.',marks:1}),
+    'speed':()=>({q:'How is speed calculated?',a:['distance travelled ÷ time taken','time taken ÷ distance travelled','distance travelled × time taken','mass ÷ time taken'],c:0,e:'Speed is the distance travelled per unit time.',marks:1,formula:'speed = distance ÷ time'}),
+    'velocity':()=>({q:'What additional information distinguishes velocity from speed?',a:['The direction of motion','The mass of the object','The temperature of the object','The size of the object'],c:0,e:'Velocity is speed in a specified direction.',marks:1}),
+    'acceleration':()=>({q:'What does acceleration describe?',a:['The rate of change of velocity','The distance travelled in one second','The mass per unit volume','The force divided by area'],c:0,e:'Acceleration is the rate at which velocity changes.',marks:1,formula:'acceleration = change in velocity ÷ time'}),
+    'mass':()=>({q:'Which statement correctly describes mass?',a:['Mass is the amount of matter in an object','Mass is the force caused by gravity','Mass is the pressure exerted by an object','Mass is the energy transferred each second'],c:0,e:'Mass measures the amount of matter in an object.',marks:1}),
+    'weight':()=>({q:'What is weight?',a:['The force acting on an object due to gravity','The amount of matter in an object','The volume occupied by an object','The energy stored in an object'],c:0,e:'Weight is the gravitational force acting on an object.',marks:1,formula:'weight = mass × gravitational field strength'}),
+    'density':()=>({q:'How is density calculated?',a:['mass ÷ volume','volume ÷ mass','mass × volume','mass + volume'],c:0,e:'Density is mass per unit volume.',marks:1,formula:'density = mass ÷ volume'}),
+    'momentum':()=>({q:'How is momentum calculated?',a:['mass × velocity','mass ÷ velocity','force × distance','weight × time'],c:0,e:'Momentum is the product of mass and velocity.',marks:1,formula:'momentum = mass × velocity'}),
+    'moment':()=>({q:'How is the moment of a force about a pivot calculated?',a:['force × perpendicular distance from the pivot','force ÷ perpendicular distance from the pivot','force + distance from the pivot','mass × velocity'],c:0,e:'The moment equals force multiplied by the perpendicular distance from the pivot.',marks:1,formula:'moment = force × perpendicular distance'}),
+    'pressure':()=>({q:'How is pressure calculated?',a:['force ÷ area','force × area','area ÷ force','mass ÷ volume'],c:0,e:'Pressure is force per unit area.',marks:1,formula:'pressure = force ÷ area'}),
+    'work':()=>({q:'When a force moves an object in the direction of the force, how is work done calculated?',a:['force × distance moved in the direction of the force','force ÷ distance moved','mass × acceleration','power × mass'],c:0,e:'Work done equals force multiplied by distance moved in the direction of the force.',marks:1,formula:'work done = force × distance'}),
+    'power':()=>({q:'What does power measure?',a:['The rate of energy transfer','The total mass of an object','The force per unit area','The distance travelled per unit mass'],c:0,e:'Power is the rate at which energy is transferred or work is done.',marks:1,formula:'power = energy transferred ÷ time'}),
+    'efficiency':()=>({q:'What does the efficiency of a device compare?',a:['Useful energy transferred with total energy supplied','Mass with volume','Force with distance','Time with temperature'],c:0,e:'Efficiency compares useful output energy with total input energy.',marks:1}),
+    'wavelength':()=>({q:'What is the wavelength of a wave?',a:['The distance between corresponding points on successive waves','The number of waves passing a point each second','The maximum displacement from the rest position','The time taken for one wave'],c:0,e:'Wavelength is the distance between corresponding points, such as crest to crest.',marks:1}),
+    'frequency':()=>({q:'What does the frequency of a wave tell you?',a:['The number of complete waves passing a point each second','The distance between two crests','The maximum displacement of the wave','The speed of the source'],c:0,e:'Frequency is the number of complete oscillations or waves per second.',marks:1,formula:'frequency = 1 ÷ period'}),
+    'amplitude':()=>({q:'What is the amplitude of a wave?',a:['The maximum displacement from the equilibrium position','The distance between successive crests','The number of waves per second','The time for one complete oscillation'],c:0,e:'Amplitude is the maximum displacement from the equilibrium position.',marks:1}),
+    'reflection':()=>({q:'What happens during reflection of a wave?',a:['The wave changes direction at a boundary and remains in the original medium','The wave must change into a different type of wave','The wave always stops at the boundary','The wave loses all of its energy'],c:0,e:'Reflection is the return of a wave after it reaches a boundary.',marks:1}),
+    'refraction':()=>({q:'What happens when a wave is refracted?',a:['Its direction changes because its speed changes when it enters a different medium','It is completely absorbed at the boundary','Its frequency always becomes zero','It changes into a particle'],c:0,e:'Refraction involves a change in wave direction caused by a change in speed between media.',marks:1}),
+    'current':()=>({q:'What is electric current?',a:['The rate of flow of electric charge','The energy stored in a battery','The opposition to charge flow','The force acting on a conductor'],c:0,e:'Electric current is the rate at which charge flows.',marks:1,formula:'current = charge ÷ time'}),
+    'voltage':()=>({q:'What does potential difference (voltage) measure?',a:['The energy transferred per unit charge','The charge flowing per second','The opposition to current','The mass of electrons'],c:0,e:'Potential difference is the energy transferred per unit charge.',marks:1,formula:'potential difference = energy transferred ÷ charge'}),
+    'resistance':()=>({q:'What does electrical resistance describe?',a:['How strongly a component opposes the flow of current','The amount of charge stored','The energy transferred per second','The number of electrons in a wire'],c:0,e:'Resistance is a measure of opposition to current.',marks:1,formula:'resistance = potential difference ÷ current'}),
+    'charge':()=>({q:'What is electric charge?',a:['A physical quantity carried by charged particles','The rate of energy transfer','The resistance of a conductor','The temperature of a circuit'],c:0,e:'Electric charge is carried by charged particles such as electrons.',marks:1}),
+    'magnetic field':()=>({q:'What is a magnetic field?',a:['A region where a magnetic material or moving charge experiences a magnetic force','A region where there is no force','A region containing only electric current','A region of zero temperature'],c:0,e:'A magnetic field is a region in which magnetic forces can act.',marks:1}),
+    'half-life':()=>({q:'What is the half-life of a radioactive isotope?',a:['The time taken for the number of undecayed nuclei to fall to half its original value','The time taken for all nuclei to decay','The time taken for the activity to double','The time taken for the atom to gain an electron'],c:0,e:'Half-life is the time required for the number of undecayed nuclei, or activity, to decrease to half.',marks:1}),
+    'transformer':()=>({q:'What is the main purpose of a transformer?',a:['To change the potential difference of an alternating supply','To convert all AC into DC','To store electrical charge permanently','To measure resistance directly'],c:0,e:'A transformer changes the potential difference of an alternating current supply.',marks:1,formula:'Vp / Vs = Np / Ns'}),
+    'orbit':()=>({q:'Why does a planet remain in orbit around a star?',a:['Gravity provides the force that continually changes the planet’s direction of motion','There is no force acting on the planet','The planet is held by a solid support','The planet has zero velocity'],c:0,e:'Gravitational attraction provides the centripetal force needed for orbital motion.',marks:1})
+  };
+  const maker=templates[concept];
+  if(maker){const q=maker(); q.e+=' The uploaded PDF also discusses this concept.'; return q;}
+  return null;
+}
+function genericFactQuestion(s,defs){
+  const d=pdfTermFromSentence(s);
+  if(d){
+    const opts=definitionDistractors(d.term,d.definition,defs);
+    if(opts.length>=3) return {q:`Which statement correctly defines ${d.term}?`,a:[d.definition,...opts],c:d.definition,e:`The uploaded PDF defines ${d.term} as: ${d.definition}.`,marks:1};
+  }
+  return null;
+}
+function numericalQuestion(s){
+  const nums=pdfNumbers(s);
+  if(nums.length<2)return null;
+  const low=s.toLowerCase();
+  if(/speed/.test(low) && /(m\/s|km\/h|distance|time)/.test(low)){
+    const m=s.match(/(\d+(?:\.\d+)?)\s*(m|km)\s+(?:in|over)\s+(\d+(?:\.\d+)?)\s*(s|min|h)/i);
+    if(m){
+      const d=Number(m[1])*(m[2].toLowerCase()==='km'?1000:1), t=Number(m[3])*(m[4].toLowerCase()==='min'?60:m[4].toLowerCase()==='h'?3600:1), ans=d/t;
+      if(isFinite(ans)&&ans>0){const unit='m/s'; return {q:`An object travels ${m[1]} ${m[2]} in ${m[3]} ${m[4]}. What is its average speed?`,a:[ans.toFixed(1)+' '+unit,(ans*2).toFixed(1)+' '+unit,(ans/2).toFixed(1)+' '+unit,(d*t).toFixed(1)+' '+unit],c:ans.toFixed(1)+' '+unit,e:`Using speed = distance ÷ time, speed = ${d} ÷ ${t} = ${ans.toFixed(1)} m/s.`,marks:1,formula:'speed = distance ÷ time'};}
     }
-    currentPDFPool=chunks;
-    for(const c of chunks){
-      if(out.length>=10) break;
-      out.push({
-        q:'Which statement is supported by the uploaded material?',
-        a:[c,...makeDistractors(c,chunks)],
-        c,
-        e:'This statement comes from the text extracted from the uploaded PDF.',
-        marks:1
-      });
-    }
+  }
+  return null;
+}
+function buildPDFQuiz(text){
+  const sentences=lessonSentences(text), defs=sentences.map(pdfTermFromSentence).filter(Boolean), concepts=pdfConcepts(text);
+  const out=[], seenQ=new Set();
+  const add=q=>{if(!q)return; const k=String(q.q).toLowerCase(); if(seenQ.has(k))return; if(!q.a||q.a.length!==4)return; q.a=uniqueOptions(q.a); if(q.a.length!==4)return; seenQ.add(k); out.push(q)};
+  // First use concept-aware questions. These are genuine Physics question stems, not sentence fragments.
+  for(const c of concepts){if(out.length>=10)break; add(conceptQuestion(c,text,sentences,defs));}
+  // Then use actual numerical examples found in the PDF.
+  for(const s of sentences){if(out.length>=10)break; add(numericalQuestion(s));}
+  // Then use real definitions from the uploaded material.
+  for(const d of defs){if(out.length>=10)break; add(genericFactQuestion(d.source,defs));}
+  // Final fallback: only use a source sentence when it can be converted into a proper factual question.
+  for(const s of sentences){
+    if(out.length>=10)break;
+    const d=pdfTermFromSentence(s); if(!d)continue;
+    add(genericFactQuestion(s,defs));
   }
   return out.slice(0,10);
 }
