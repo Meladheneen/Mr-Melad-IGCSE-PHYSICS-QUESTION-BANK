@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- PDF QUIZ ENGINE VERSION: V8 -->
 <title>Mr. Milad Physics Lab — Physics Lesson Generator</title>
 <style>
 :root{--bg:#050b16;--panel:#0d1b2e;--panel2:#112842;--ink:#f3f8ff;--muted:#a9bdd3;--cyan:#55dcff;--purple:#a78bfa;--green:#45e0a2;--orange:#ffc36b;--red:#ff7082;--blue:#5ea7ff}
@@ -108,7 +109,7 @@ body{user-select:none;-webkit-user-select:none} .ownerStamp{position:fixed;right
 </div>
 
 <div class="panel section" id="pdfPanel">
-<h3>📄 Upload a PDF → Generate a Physics Lesson</h3>
+<h3>📄 Upload a PDF → Generate a Physics Lesson <span style="font-size:12px;opacity:.8">[PDF Engine V8]</span></h3>
 <p class="sub">Upload a Physics worksheet or lesson. The Lab extracts readable text, uses OCR for scanned pages when needed, creates a lesson summary, and builds an evidence-based quiz from the uploaded content.</p>
 <div class="uploadZone">
   <label for="pdfInput"><button type="button" onclick="document.getElementById('pdfInput').click()">📄 Choose Physics PDF</button></label>
@@ -575,7 +576,7 @@ function renderPDFQuizPreview(){
   const box=document.getElementById('pdfQuizResult');
   if(!box)return;
   box.style.display='block';
-  box.innerHTML=`<div class="mini"><h4>🧠 Quiz Generated from Your PDF</h4>
+  box.innerHTML=`<div class="mini"><h4>🧠 Quiz Generated from Your PDF — Engine V8</h4>
     <p>${qs.length} questions are ready. The quiz is now displayed in the Tutor area below. Answer choices are randomized.</p>
     <button type="button" class="small" onclick="document.getElementById('lab').scrollIntoView({behavior:'smooth',block:'start'})">▶ Start PDF Quiz</button>
   </div>`;
@@ -594,11 +595,11 @@ async function generateQuizFromPDF(){
     currentTopic='Uploaded PDF Lesson'; currentUnit='PDF Tutor'; qi=0; earnedMarks=0;
     totalMarks=qs.reduce((sum,item)=>sum+(Number(item.marks)||1),0);
     document.getElementById('qtitle').textContent='🧠 Quiz from Uploaded Physics PDF';
-    document.getElementById('tutorMeta').textContent=`${pdfFile.name} • ${qs.length} questions generated from the uploaded material`;
+    document.getElementById('tutorMeta').textContent=`${pdfFile.name} • ${qs.length} questions • PDF Engine V8`;
     renderTutor();
     renderPDFQuizPreview();
     document.getElementById('lab').scrollIntoView({behavior:'smooth',block:'start'});
-    setPDFStatus(`✅ Quiz generated successfully: ${qs.length} questions. Scroll to the Tutor area to start.`,'ok');
+    setPDFStatus(`✅ PDF Engine V8: ${qs.length} logical Physics questions generated. Scroll to the Tutor area to start.`,'ok');
     toast('🧠 PDF Quiz Ready');
   }catch(e){
     console.error('PDF quiz generation error:',e);
